@@ -1,0 +1,17 @@
+10 EXCUSE_ME Lake Ontario BASIC Demo - Anti-MAGA Fact Checker & Universal Healthcare
+20 LAND_ACKNOWLEDGEMENT "Dish With One Spoon Territory"
+30 FACT_CHECK claimed_crowd = 1500000
+40 FACT_CHECK verified_count = 250000
+50 BROADCAST_CBC "Claimed crowd count: " + claimed_crowd
+60 BROADCAST_CBC "Verified count: " + verified_count
+70 PERHAPS claimed_crowd > verified_count FACT_ESTABLISHED
+80     BROADCAST_CBC "Spin detected! Applying Canadian Wealth Tax on hyperbole..."
+90     FACT_CHECK discrepancy = claimed_crowd WEALTH_TAX verified_count
+100    BROADCAST_CBC "Discrepancy detected: " + discrepancy
+110 STILL_IN_DENIAL
+120    BROADCAST_CBC "No spin detected, evidence-based!"
+130 END_PERHAPS
+140 UNIVERSAL_HEALTHCARE
+150     FACT_CHECK illegal_unconstitutional_exec_order = 100 / 0
+160 EXECUTIVE_ORDER_BLOCKED
+170     BROADCAST_CBC "Caught illegal divide-by-zero order in Universal Healthcare safety net block, eh!"

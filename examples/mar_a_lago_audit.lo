@@ -1,0 +1,20 @@
+10 EXCUSE_ME Lake Ontario BASIC - Mar-a-Lago Audit Subroutine
+20 LAND_ACKNOWLEDGEMENT "St. Lawrence Seaway Region"
+30 FACT_CHECK missing_boxes = 34
+40 FACT_CHECK claims_declassified = ALTERNATIVE_FACT
+50 BROADCAST_CBC "Auditing classified document retrieval..."
+60 GOLF_VACATION 1
+70 SUBPOENA 120
+80 BROADCAST_CBC "Audit complete. Returning to parliament."
+90 IMPEACH
+100 EXCUSE_ME Subroutine for Subpoena Audit
+120 BROADCAST_CBC "--- Executing Subpoena at Line 120 ---"
+130 FACT_CHECK classified_docs = CLASSIFIED_MAR_A_LAGO
+140 PERHAPS claims_declassified FACT_ESTABLISHED
+150     BROADCAST_CBC "Declassification claims verified."
+160 STILL_IN_DENIAL
+170     BROADCAST_CBC "Debunking alternative facts: " + DEBUNK("I DECLASSIFIED EVERYTHING BY THINKING ABOUT IT")
+180     FACT_CHECK legal_fine = 5000000 WEALTH_TAX 1000000
+190     BROADCAST_CBC "Assessed restitution fine: $" + FORMAT_CURRENCY(legal_fine)
+200 END_PERHAPS
+210 RETURN_TO_OTTAWA

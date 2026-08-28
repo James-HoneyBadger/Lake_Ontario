@@ -1,0 +1,16 @@
+10 EXCUSE_ME Lake Ontario Progressive Showcase Script
+20 LAND_ACKNOWLEDGEMENT "Huron-Wendat & Petun First Nations Lands"
+30 BROADCAST_CBC "--- 1. Fact-checking Caps-Lock MAGA Tweets ---"
+40 FACT_CHECK tweet = "THE ELECTION WAS RIGGED VERY UNFAIR BIGGEST EVER"
+50 BROADCAST_CBC DEBUNK(tweet)
+60 BROADCAST_CBC "--- 2. Taxing Wealthy Oligarchs for Public Infrastructure ---"
+70 FACT_CHECK oligarch_wealth = 5000000
+80 FACT_CHECK taxed_wealth = TAX_THE_BILLIONAIRE(oligarch_wealth)
+90 BROADCAST_CBC "Original Wealth: $" + FORMAT_CURRENCY(oligarch_wealth)
+100 BROADCAST_CBC "After 90% Wealth Tax for Healthcare & Transit: $" + taxed_wealth
+110 BROADCAST_CBC "--- 3. Coast to Coast Public Funding Loop ---"
+120 COAST_TO_COAST province = 1 UP_TO 3
+130     BROADCAST_CBC "Distributing equal funding to Province #" + province
+140 THANK_YOU_EH
+150 BROADCAST_CBC "--- 4. Democratic Impeachment ---"
+160 IMPEACH

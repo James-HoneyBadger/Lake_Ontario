@@ -1,0 +1,20 @@
+10 EXCUSE_ME Lake Ontario BASIC - Climate Change & Clean Energy Policy
+20 LAND_ACKNOWLEDGEMENT "Treaty 13 Territory (Toronto & Lake Ontario Basin)"
+30 FACT_CHECK carbon_tax_rate = 65
+40 FACT_CHECK total_emissions_tons = 120
+50 FACT_CHECK gross_dividend = carbon_tax_rate * total_emissions_tons
+60 BROADCAST_CBC "Total Carbon Dividend Pool: $" + FORMAT_CURRENCY(gross_dividend)
+70 FACT_CHECK rebate_per_household = gross_dividend EQUAL_PAY 250
+80 BROADCAST_CBC "Citizen Household Rebate: $" + FORMAT_CURRENCY(rebate_per_household)
+90 BROADCAST_CBC "--- Transitioning Energy Grid ---"
+100 COAST_TO_COAST array_id = 1 UP_TO 4
+110     BROADCAST_CBC "Deploying Solar & Wind Farm #" + array_id + " to Ontario Grid"
+120 THANK_YOU_EH
+130 UNIVERSAL_HEALTHCARE
+140     FACT_CHECK fossil_fuel_subsidy = 5000 / 0
+150 EXECUTIVE_ORDER_BLOCKED
+160     BROADCAST_CBC "Blocked unconstitutional oil subsidy in Universal Healthcare safety net!"
+170 FACT_CHECK climate_goal_met = EVIDENCE_BASED
+180 PERHAPS climate_goal_met FACT_ESTABLISHED
+190     BROADCAST_CBC "Net Zero Target 2050 on track, beautiful!"
+200 END_PERHAPS

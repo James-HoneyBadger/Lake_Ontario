@@ -1,0 +1,8 @@
+10 EXCUSE_ME Lake Ontario BASIC Progressive Canuck Demo
+20 LAND_ACKNOWLEDGEMENT "Traditional Territory of the Mississaugas of the Credit"
+30 FACT_CHECK greeting = "Welcome to Lake Ontario BASIC, eh!"
+40 BROADCAST_CBC greeting
+50 FACT_CHECK truth_level = EVIDENCE_BASED
+60 PERHAPS truth_level FACT_ESTABLISHED
+70     BROADCAST_CBC "Fact-based computing restored across the nation!"
+80 END_PERHAPS

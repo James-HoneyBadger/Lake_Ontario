@@ -1,0 +1,15 @@
+10 EXCUSE_ME Lake Ontario BASIC - Popular Vote & Electoral Audit
+20 LAND_ACKNOWLEDGEMENT "Haudenosaunee Confederacy Territory"
+30 FACT_CHECK candidate_a_popular = 81000000
+40 FACT_CHECK candidate_b_popular = 74000000
+50 FACT_CHECK claimed_land_slide = 100000000
+60 BROADCAST_CBC "Popular Vote Count (Candidate A): " + candidate_a_popular
+70 BROADCAST_CBC "Popular Vote Count (Candidate B): " + candidate_b_popular
+80 BROADCAST_CBC "Fact-Checking Exaggerated Claimed Total..."
+90 FACT_CHECK verified_claim = FACT_CHECK_CROWD(claimed_land_slide)
+100 BROADCAST_CBC "Adjusted crowd metric based on satellite analysis: " + verified_claim
+110 PERHAPS candidate_a_popular > candidate_b_popular FACT_ESTABLISHED
+120     BROADCAST_CBC "Democratic outcome confirmed by evidence-based counting!"
+130 STILL_IN_DENIAL
+140     BROADCAST_CBC "Alternative facts detected, recounting votes with international observers..."
+150 END_PERHAPS
