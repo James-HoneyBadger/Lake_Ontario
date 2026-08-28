@@ -2,8 +2,8 @@
 """
 Lake Ontario BASIC Interpreter
 A fully featured, practical programming language interpreter inspired by classic BASIC,
-infused with Canadian politeness & Honey Badger attitude, pro-science, pro-health care, pro-diversity,
-pro-socialism, and anti-MAGA.
+infused with Canadian politeness & Honey Badger attitude, pro-science, pro-health care,
+pro-diversity, pro-socialism, and anti-MAGA.
 """
 
 import sys
@@ -11,18 +11,23 @@ import re
 import math
 import time
 
+
 class LOString(str):
+
     def __add__(self, other):
         return LOString(str(self) + str(other))
+
     def __radd__(self, other):
         return LOString(str(other) + str(self))
 
 
 # --- Satirical & Practical Built-in Functions ---
 
+
 def debunk(val):
     text = str(val).lower()
     return LOString(f"{text} (Fact-checked by CBC, eh!)")
+
 
 def fact_check_crowd(val):
     try:
@@ -31,25 +36,28 @@ def fact_check_crowd(val):
     except Exception:
         return 0
 
+
 def tax_the_billionaire(val):
     try:
         num = float(val)
         if num > 1000000:
             excess = num - 1000000
-            res = 1000000 + (excess * 0.1)  # 90% marginal rate
+            res = 1000000 + (excess * 0.1)
         else:
             res = num
         return LOString(f"{res:.2f}")
     except Exception:
         return LOString("0.00")
 
+
 def defund_oligarchy(val):
     try:
         num = float(val)
-        res = max(0.0, num * 0.05)  # Redistribute 95% to social housing
+        res = max(0.0, num * 0.05)
         return LOString(f"{res:.2f}")
     except Exception:
         return LOString("0.00")
+
 
 def living_wage(hours, base_rate=25.0):
     try:
@@ -58,6 +66,7 @@ def living_wage(hours, base_rate=25.0):
     except Exception:
         return LOString("0.00")
 
+
 def universal_basic_income(population, grant=2000.0):
     try:
         res = float(population) * float(grant)
@@ -65,12 +74,14 @@ def universal_basic_income(population, grant=2000.0):
     except Exception:
         return LOString("0.00")
 
+
 def carbon_offset(emissions_tons):
     try:
-        res = float(emissions_tons) * 65.0  # $65/ton rebate fund
+        res = float(emissions_tons) * 65.0
         return LOString(f"{res:.2f}")
     except Exception:
         return LOString("0.00")
+
 
 def format_currency(val):
     try:
@@ -79,33 +90,58 @@ def format_currency(val):
     except Exception:
         return LOString("0.00")
 
+
 def celebrate_diversity(*args):
     items = [str(a) for a in args]
-    return "🌈 🏳️‍🌈 🏳️‍⚧️ Inclusive Collective: " + ", ".join(items) + " ✊"
+    return (
+        "🌈 🏳️‍🌈 🏳️‍⚧️ Inclusive Collective: "
+        + ", ".join(items)
+        + " ✊"
+    )
+
 
 def unionize(*workers):
     if len(workers) == 1 and isinstance(workers[0], (list, tuple)):
         workers = workers[0]
     return [f"Union Member: {w}" for w in workers]
 
+
 def science_fact(topic):
     topic_str = str(topic).lower()
     facts = {
-        "climate": "Peer-Reviewed Consensus: Anthropogenic climate change is real and requires immediate renewable transition.",
-        "vaccines": "Peer-Reviewed Consensus: Vaccines are safe, effective, and save millions of lives globally.",
-        "evolution": "Peer-Reviewed Consensus: Biological evolution by natural selection is the foundational principle of biology.",
-        "diversity": "Peer-Reviewed Consensus: Diverse and inclusive communities show higher resilience, innovation, and well-being."
+        "climate": (
+            "Peer-Reviewed Consensus: Anthropogenic climate change is real and "
+            "requires immediate renewable transition."
+        ),
+        "vaccines": (
+            "Peer-Reviewed Consensus: Vaccines are safe, effective, and save "
+            "millions of lives globally."
+        ),
+        "evolution": (
+            "Peer-Reviewed Consensus: Biological evolution by natural selection "
+            "is the foundational principle of biology."
+        ),
+        "diversity": (
+            "Peer-Reviewed Consensus: Diverse and inclusive communities show "
+            "higher resilience, innovation, and well-being."
+        ),
     }
     for k, v in facts.items():
         if k in topic_str:
             return v
-    return f"Peer-Reviewed Science: Empirical analysis confirms {topic} is backed by scientific evidence."
+    return (
+        "Peer-Reviewed Science: Empirical analysis confirms "
+        f"{topic} is backed by scientific evidence."
+    )
+
 
 def peer_reviewed_sqrt(val):
     return math.sqrt(float(val))
 
+
 def science_round(val, decimals=2):
     return round(float(val), int(decimals))
+
 
 def read_resource(filepath):
     try:
@@ -113,6 +149,7 @@ def read_resource(filepath):
             return f.read()
     except Exception as e:
         return f"ALTERNATIVE_FACT (Cannot read resource: {e})"
+
 
 def publish_research(filepath, content):
     try:

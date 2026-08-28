@@ -10,3 +10,11 @@ requires-python = ">=3.11"
 
 [project.scripts]
 lake-ontario-ide = "lake_ontario_ide.gui:main"
+
+[tool.black]
+line-length = 88
+target-version = ["py313"]
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E501"]
