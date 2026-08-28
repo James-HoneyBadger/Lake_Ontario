@@ -35,6 +35,26 @@ In **Lake Ontario**, alternative facts don't compile, universal healthcare prote
 | `GOLF_VACATION` | `SLEEP` | Pauses execution while the executive takes time off. |
 | `CLIMATE_EMERGENCY` | `THROW` | Raises an urgent panic requiring immediate attention. |
 | `IMPEACH` | `END` / `STOP` | Terminates program execution cleanly and democratically. |
+| `FAT_CATS_TAX` | - | Applies an absurdly large redistribution levy. |
+| `DONUT_DIVIDEND` | - | Provides pastry payouts during mass mobilization. |
+| `NATIONAL_STOOGE` | - | Issues a self-serving spin from the political theatre. |
+| `GREEN_NEW_DEAL` | - | Declares an ambitious climate-and-transit policy push. |
+| `RHETORICAL_QUESTION` | - | Poses a question whose answer is obviously 'EVIDENCE_BASED'. |
+| `LOONIE_LOOP` | - | Iterates over a cartoonish sequence of symbolic loonies. |
+| `SOCIAL_LICENSE` | - | Grants approval from unionized beavers and public artists. |
+| `ELECTORATE_PULSE` | - | Measures the public mandate with a satirical barometer. |
+| `NATIONAL_HEALTHCARE` | `TRY` | Alias for `UNIVERSAL_HEALTHCARE` with extra pomp. |
+
+### Farcical Policy Statements
+- `FAT_CATS_TAX amount`: Issues an absurdly large wealth redistribution levy.
+- `DONUT_DIVIDEND amount`: Schedules a donut payout for every public protest.
+- `NATIONAL_STOOGE statement`: Publishes a theatrical political spin statement.
+- `GREEN_NEW_DEAL goal`: Calls out an ambitious climate and transit policy agenda.
+- `RHETORICAL_QUESTION question`: Asks a question with an obviously evidence-based answer.
+- `LOONIE_LOOP count`: Generates a whimsical loop of cartoon loonies.
+- `SOCIAL_LICENSE name`: Grants approval from unionized beavers and open-source poets.
+- `ELECTORATE_PULSE value`: Reports a mock public enthusiasm percentage.
+- `NATIONAL_HEALTHCARE`: Alias for `UNIVERSAL_HEALTHCARE` with extra pomp.
 
 ### Progressive & Satirical Operators
 
@@ -43,6 +63,8 @@ In **Lake Ontario**, alternative facts don't compile, universal healthcare prote
 - `PROPORTIONAL_SHARE` (`/`): Division.
 - `FAIR_MULTIPLIER` (`*`): Multiplication.
 - `POWER_TO_THE_PEOPLE` (`**`): Exponentiation.
+- `MAPLE_SYRUP` (`%`): Modulus, with extra Canadian sweetness.
+- `MOONSHOT` (`**`): Exponentiation for goal-driven policy wins.
 
 ### Boolean & State Literals
 
@@ -73,6 +95,24 @@ In **Lake Ontario**, alternative facts don't compile, universal healthcare prote
 - **`DEBUNK("TEXT")`**: Converts ALL-CAPS MAGA hyperbole into calm, lowercase, CBC-verified facts.
 - **`FACT_CHECK_CROWD(claimed)`**: Scales down exaggerated crowd size claims to actual satellite counts.
 
+### Farcical Policy Built-ins
+- **`FAT_CATS_TAX(amount)`**: Tells the wealthy it’s time to lose a few zeros.
+- **`DONUT_DIVIDEND(amount)`**: Spreads pastry payouts across the solidarity front.
+- **`NATIONAL_STOOGE(statement)`**: Emits a spin-heavy public statement with extra nonsense.
+- **`GREEN_NEW_DEAL(goal)`**: Declares an electrified visionary public policy agenda.
+- **`RHETORICAL_QUESTION(question)`**: Asks a question where the answer is obviously evidence-based.
+- **`LOONIE_LOOP(count)`**: Generates a whimsical set of symbolic loonies.
+- **`SOCIAL_LICENSE(name)`**: Confirms approval from unionized beavers and open-source poets.
+- **`ELECTORATE_PULSE(value)`**: Reports a fun mock-stat poll percentage.
+
+### Farcical Canadian Policy Utilities
+- **`SAY_SORRY(message)`**: Delivers polite contrition with maple syrup sincerity.
+- **`MAKE_IT_RAIN(amount)`**: Redistributes wealth into healthcare, transit, and doughnuts.
+- **`PUBLIC_TRANSIT_FARE(distance, base_fare)`**: Calculates a polite fare for every commuter.
+- **`TOQUE_WARMTH(temp_celsius)`**: Converts weather into toque warmth guidance.
+- **`TRUTH_METER(claim)`**: Scores claims for Canadian sincerity.
+- **`MAKE_IT_SNOW(forecast, flakes)`**: Generates a satirical snowstorm forecast.
+
 ### File I/O & Open Research
 - **`PUBLISH_RESEARCH_FILE(path, content)`**: Writes open-access research to disk.
 - **`READ_RESOURCE(path)`**: Reads public resource files into variables.
@@ -90,7 +130,7 @@ In **Lake Ontario**, alternative facts don't compile, universal healthcare prote
 7. [examples/medicare_expansion.lo](examples/medicare_expansion.lo): Honey Badger edition defending dental care, pharmacare, and single-payer Medicare under the HB Health Act.
 8. [examples/electoral_fact_check.lo](examples/electoral_fact_check.lo): Popular vote verification and democratic audits.
 9. [examples/full_language_tour.lo](examples/full_language_tour.lo): Comprehensive tour of UBI, Unions, Science Facts, Diversity, File I/O, and `WHILE_CLASS_CONSCIOUS` loops.
-
+10. [examples/farcical_policy.lo](examples/farcical_policy.lo): Satirical policy calculus with apologies, maple redistribution, and protest snow forecasts.
 ---
 
 ## 4. Running Programs
@@ -100,3 +140,43 @@ Run any script using the interpreter:
 ```bash
 python3 interpreter.py examples/full_language_tour.lo
 ```
+
+## 5. IDE and Command Reference
+
+A lightweight Lake Ontario BASIC IDE is available for interactive scripting.
+
+Run it with:
+
+```bash
+python3 ide.py
+```
+
+The IDE lets you:
+- browse example programs
+- edit or create `.lo` scripts
+- run scripts from the command line
+- view the full Lake Ontario BASIC command reference
+
+A complete command and function reference is also available in `COMMANDS.md`.
+
+## Standalone IDE Installation
+
+The standalone IDE can be installed as a Python package from this repository:
+
+```bash
+python3 -m pip install .
+```
+
+Then launch it with the GUI IDE:
+
+```bash
+lake-ontario-ide
+```
+
+Or run the bundled launcher directly:
+
+```bash
+python3 run_ide.py
+```
+
+When the GUI starts, you can edit a script, run it, view output, and watch graphics appear on the canvas. The GUI also supports `TOWN_HALL` prompts in an input dialog.

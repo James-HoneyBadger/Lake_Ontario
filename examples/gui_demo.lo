@@ -1,0 +1,9 @@
+10 EXCUSE_ME Lake Ontario BASIC GUI demo script
+20 LAND_ACKNOWLEDGEMENT "Traditional Territory"
+30 BROADCAST_CBC "Lake Ontario BASIC GUI demo starting"
+40 DRAW_LINE 20, 60, 320, 60
+50 DRAW_RECTANGLE 20, 80, 180, 80
+60 DRAW_CIRCLE 320, 80, 40
+70 DRAW_TEXT 20, 180, "Welcome to the Lake Ontario BASIC GUI!"
+80 TOWN_HALL user_response
+90 BROADCAST_CBC user_response

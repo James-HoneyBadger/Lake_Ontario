@@ -1,0 +1,21 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+.python-version
+
+# Mypy cache
+.mypy_cache/
+
+# IDE files
+*.swp
+*.swo
+.vscode/
+
+# Logs
+*.log

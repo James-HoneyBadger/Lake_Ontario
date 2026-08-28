@@ -9,6 +9,7 @@ pro-socialism, and anti-MAGA.
 import sys
 import re
 import math
+import time
 
 class LOString(str):
     def __add__(self, other):
@@ -133,6 +134,99 @@ def honey_badger_strike(action):
     text = str(action)
     return LOString(f"🦡 UNYIELDING BADGER STRIKE: Taking no shit on '{text}'! Standing firm!")
 
+def say_sorry(message):
+    text = str(message)
+    return LOString(f"Sorry, eh? {text} — delivered with extra maple syrup and contrition.")
+
+def make_it_rain(amount):
+    try:
+        num = float(amount)
+        redistributed = num * 0.95
+        return LOString(f"🍁 MAKE IT RAIN: Redistributing ${redistributed:.2f} to healthcare, transit, and doughnuts.")
+    except Exception:
+        return LOString("🍁 MAKE IT RAIN: Alternative facts cannot be redistributed.")
+
+def public_transit_fare(distance, base_fare=3.50):
+    try:
+        miles = float(distance)
+        fare = max(1.0, base_fare + miles * 0.25)
+        return LOString(f"🚊 Transit fare for {miles:.1f} km: ${fare:.2f} (inclusive of polite service fees)")
+    except Exception:
+        return LOString("🚊 Transit fare unavailable: Invalid route.")
+
+def toque_warmth(temp_celsius):
+    try:
+        temp = float(temp_celsius)
+        if temp < -20:
+            return LOString("🧣 Toque warmth: Full Canada Goose thermal emergency activated.")
+        if temp < 0:
+            return LOString("🧣 Toque warmth: Cozy enough for poutine and parliament protests.")
+        return LOString("🧣 Toque warmth: Too warm for a toque, but wear it anyway for civic pride.")
+    except Exception:
+        return LOString("🧣 Toque warmth: Invalid weather, eh?")
+
+def truth_meter(claim):
+    text = str(claim)
+    rating = 100 if "EVIDENCE_BASED" in text or "True" in text else 0
+    return LOString(f"📏 Truth Meter: {rating}% sincerity, with a side of maple humour.")
+
+def make_it_snow(forecast, flakes=100):
+    try:
+        count = int(flakes)
+        return LOString(f"❄️ Snow forecast: {count} flake-level protests expected when {forecast}.")
+    except Exception:
+        return LOString("❄️ Snow forecast: Confused, like a polar vortex in July.")
+
+
+def fat_cats_tax(amount):
+    try:
+        num = float(amount)
+        taxed = max(0.0, num * 0.95)
+        return LOString(f"💼 FAT CATS TAX: Extracted ${taxed:.2f} from the one-percenters and sent it to universal crumbs.")
+    except Exception:
+        return LOString("💼 FAT CATS TAX: Alternative facts cannot be taxed.")
+
+
+def donut_dividend(amount):
+    try:
+        num = float(amount)
+        return LOString(f"🍩 DONUT DIVIDEND: Distributing ${num:.2f} worth of pastries to every rally-goer.")
+    except Exception:
+        return LOString("🍩 DONUT DIVIDEND: Invalid pastry budget.")
+
+
+def national_stooge(statement):
+    text = str(statement)
+    return LOString(f"🎩 NATIONAL STOOGE: '{text}' — delivered with maximum spin and minimum accountability.")
+
+
+def green_new_deal(goal):
+    return LOString(f"🌿 GREEN NEW DEAL: Targeting '{goal}' with electric buses, solar subsidies, and polite protest marches.")
+
+
+def rhetorical_question(question):
+    return LOString(f"❓ RHETORICAL QUESTION: {question} — and yes, the answer is obviously 'EVIDENCE_BASED'.")
+
+
+def loonie_loop(count):
+    try:
+        num = int(count)
+        return [f"Loonie #{i+1}" for i in range(max(0, num))]
+    except Exception:
+        return ["Loonie loop failed: invalid flake count."]
+
+
+def social_license(license_name):
+    return LOString(f"✅ SOCIAL LICENSE: '{license_name}' has 100% approval from unionized beavers and open-source poets.")
+
+
+def electorate_pulse(value):
+    try:
+        pct = float(value)
+        return LOString(f"📊 ELECTORATE PULSE: {min(max(pct, 0.0), 100.0):.1f}% enthusiasm for the public mandate.")
+    except Exception:
+        return LOString("📊 ELECTORATE PULSE: Polling data is unavailable, eh.")
+
 
 class LakeOntarioInterpreter:
     def __init__(self):
@@ -141,6 +235,15 @@ class LakeOntarioInterpreter:
         self.line_map = {}
         self.pc = 0
         self.call_stack = []
+        self.custom_builtins = {}
+        self.input_callback = None
+        self.graphics_callbacks = {}
+
+    def set_input_callback(self, callback):
+        self.input_callback = callback
+
+    def set_graphics_callbacks(self, callbacks):
+        self.graphics_callbacks = callbacks or {}
 
     def load_script(self, code_str):
         raw_lines = code_str.splitlines()
@@ -178,6 +281,8 @@ class LakeOntarioInterpreter:
         expr = re.sub(r'\bPROPORTIONAL_SHARE\b', '/', expr)
         expr = re.sub(r'\bFAIR_MULTIPLIER\b', '*', expr)
         expr = re.sub(r'\bPOWER_TO_THE_PEOPLE\b', '**', expr)
+        expr = re.sub(r'\bMAPLE_SYRUP\b', '%', expr)
+        expr = re.sub(r'\bMOONSHOT\b', '**', expr)
 
         # Preserve string literals during variable replacement
         literals = []
@@ -210,6 +315,20 @@ class LakeOntarioInterpreter:
             "HONEY_BADGER_DEBUNK": honey_badger_debunk,
             "HONEY_BADGER_BITE": honey_badger_bite,
             "HONEY_BADGER_STRIKE": honey_badger_strike,
+            "SAY_SORRY": say_sorry,
+            "MAKE_IT_RAIN": make_it_rain,
+            "PUBLIC_TRANSIT_FARE": public_transit_fare,
+            "TOQUE_WARMTH": toque_warmth,
+            "TRUTH_METER": truth_meter,
+            "MAKE_IT_SNOW": make_it_snow,
+            "FAT_CATS_TAX": fat_cats_tax,
+            "DONUT_DIVIDEND": donut_dividend,
+            "NATIONAL_STOOGE": national_stooge,
+            "GREEN_NEW_DEAL": green_new_deal,
+            "RHETORICAL_QUESTION": rhetorical_question,
+            "LOONIE_LOOP": loonie_loop,
+            "SOCIAL_LICENSE": social_license,
+            "ELECTORATE_PULSE": electorate_pulse,
             "COLLECTIVE_LIST": lambda *args: list(args),
             "MUTUAL_AID_REGISTRY": lambda **kwargs: dict(kwargs)
         }
@@ -269,6 +388,52 @@ class LakeOntarioInterpreter:
                     target = self.evaluate_expression(stmt[12:].strip())
                     print(f"💥 BADGER BITE: {target} 💥")
 
+                # FAT_CATS_TAX statement
+                elif stmt.startswith("FAT_CATS_TAX "):
+                    amount = self.evaluate_expression(stmt[13:].strip())
+                    print(fat_cats_tax(amount))
+
+                # DONUT_DIVIDEND statement
+                elif stmt.startswith("DONUT_DIVIDEND "):
+                    amount = self.evaluate_expression(stmt[15:].strip())
+                    print(donut_dividend(amount))
+
+                # NATIONAL_STOOGE statement
+                elif stmt.startswith("NATIONAL_STOOGE "):
+                    msg = self.evaluate_expression(stmt[14:].strip())
+                    print(national_stooge(msg))
+
+                # GREEN_NEW_DEAL statement
+                elif stmt.startswith("GREEN_NEW_DEAL "):
+                    goal = self.evaluate_expression(stmt[15:].strip())
+                    print(green_new_deal(goal))
+
+                # RHETORICAL_QUESTION statement
+                elif stmt.startswith("RHETORICAL_QUESTION "):
+                    question = self.evaluate_expression(stmt[19:].strip())
+                    print(rhetorical_question(question))
+
+                # LOONIE_LOOP statement
+                elif stmt.startswith("LOONIE_LOOP "):
+                    count = self.evaluate_expression(stmt[12:].strip())
+                    result = loonie_loop(count)
+                    print(result)
+
+                # SOCIAL_LICENSE statement
+                elif stmt.startswith("SOCIAL_LICENSE "):
+                    license_name = self.evaluate_expression(stmt[15:].strip())
+                    print(social_license(license_name))
+
+                # ELECTORATE_PULSE statement
+                elif stmt.startswith("ELECTORATE_PULSE "):
+                    pulse = self.evaluate_expression(stmt[16:].strip())
+                    print(electorate_pulse(pulse))
+
+                # NATIONAL_HEALTHCARE alias for UNIVERSAL_HEALTHCARE
+                elif stmt == "NATIONAL_HEALTHCARE":
+                    in_healthcare = True
+                    print("🏥 NATIONAL HEALTHCARE ENGAGED: Public safety net activated with honour and apologies.")
+
                 # FACT_CHECK variable assignment
                 elif stmt.startswith("FACT_CHECK "):
                     body = stmt[11:].strip()
@@ -285,11 +450,72 @@ class LakeOntarioInterpreter:
                 # TOWN_HALL input statement
                 elif stmt.startswith("TOWN_HALL "):
                     var_name = stmt[10:].strip()
-                    user_val = input(f"🇨🇦 Democratic Input for {var_name}: ")
+                    if self.input_callback:
+                        user_val = self.input_callback(var_name)
+                    else:
+                        user_val = input(f"🇨🇦 Democratic Input for {var_name}: ")
                     try:
                         self.variables[var_name] = int(user_val)
                     except ValueError:
                         self.variables[var_name] = user_val
+
+                # INPUT_BOX statement for GUI text input dialogs
+                elif stmt.startswith("INPUT_BOX "):
+                    var_name = stmt[10:].strip()
+                    if self.input_callback:
+                        user_val = self.input_callback(var_name, prompt_type="input_box")
+                    else:
+                        user_val = input(f"🖥️ Input Box for {var_name}: ")
+                    try:
+                        self.variables[var_name] = int(user_val)
+                    except ValueError:
+                        self.variables[var_name] = user_val
+
+                # SET_PEN_COLOR and SET_FILL_COLOR statements
+                elif stmt.startswith("SET_PEN_COLOR "):
+                    color_value = self.evaluate_expression(stmt[14:].strip())
+                    callback = self.graphics_callbacks.get("pen_color")
+                    if callback:
+                        callback(color_value)
+
+                elif stmt.startswith("SET_FILL_COLOR "):
+                    color_value = self.evaluate_expression(stmt[15:].strip())
+                    callback = self.graphics_callbacks.get("fill_color")
+                    if callback:
+                        callback(color_value)
+
+                elif stmt.startswith("SET_CANVAS_BG "):
+                    bg_value = self.evaluate_expression(stmt[14:].strip())
+                    callback = self.graphics_callbacks.get("canvas_bg")
+                    if callback:
+                        callback(bg_value)
+
+                # FILL_RECTANGLE statement
+                elif stmt.startswith("FILL_RECTANGLE "):
+                    args = [arg.strip() for arg in stmt[15:].split(",")]
+                    if len(args) == 4:
+                        x = self.evaluate_expression(args[0])
+                        y = self.evaluate_expression(args[1])
+                        width = self.evaluate_expression(args[2])
+                        height = self.evaluate_expression(args[3])
+                        callback = self.graphics_callbacks.get("filled_rectangle")
+                        if callback:
+                            callback(x, y, width, height)
+
+                # FILL_CIRCLE statement
+                elif stmt.startswith("FILL_CIRCLE "):
+                    args = [arg.strip() for arg in stmt[12:].split(",")]
+                    if len(args) == 3:
+                        x = self.evaluate_expression(args[0])
+                        y = self.evaluate_expression(args[1])
+                        radius = self.evaluate_expression(args[2])
+                        callback = self.graphics_callbacks.get("filled_circle")
+                        if callback:
+                            callback(x, y, radius)
+
+                elif stmt.startswith("WAIT "):
+                    delay = float(self.evaluate_expression(stmt[5:].strip()))
+                    time.sleep(min(max(delay / 1000.0, 0.0), 5.0))
 
                 # PUBLISH_RESEARCH_FILE statement
                 elif stmt.startswith("PUBLISH_RESEARCH_FILE "):
@@ -299,6 +525,54 @@ class LakeOntarioInterpreter:
                     content = self.evaluate_expression(content_expr)
                     publish_research(path, content)
                     print(f"📄 Published research document to {path}")
+
+                # Graphics and GUI drawing statements
+                elif stmt == "CLEAR_GRAPHICS":
+                    callback = self.graphics_callbacks.get("clear")
+                    if callback:
+                        callback()
+
+                elif stmt.startswith("DRAW_LINE "):
+                    args = [arg.strip() for arg in stmt[10:].split(",")]
+                    if len(args) == 4:
+                        x1 = self.evaluate_expression(args[0])
+                        y1 = self.evaluate_expression(args[1])
+                        x2 = self.evaluate_expression(args[2])
+                        y2 = self.evaluate_expression(args[3])
+                        callback = self.graphics_callbacks.get("line")
+                        if callback:
+                            callback(x1, y1, x2, y2)
+
+                elif stmt.startswith("DRAW_RECTANGLE "):
+                    args = [arg.strip() for arg in stmt[15:].split(",")]
+                    if len(args) == 4:
+                        x = self.evaluate_expression(args[0])
+                        y = self.evaluate_expression(args[1])
+                        width = self.evaluate_expression(args[2])
+                        height = self.evaluate_expression(args[3])
+                        callback = self.graphics_callbacks.get("rectangle")
+                        if callback:
+                            callback(x, y, width, height)
+
+                elif stmt.startswith("DRAW_CIRCLE "):
+                    args = [arg.strip() for arg in stmt[12:].split(",")]
+                    if len(args) == 3:
+                        x = self.evaluate_expression(args[0])
+                        y = self.evaluate_expression(args[1])
+                        radius = self.evaluate_expression(args[2])
+                        callback = self.graphics_callbacks.get("circle")
+                        if callback:
+                            callback(x, y, radius)
+
+                elif stmt.startswith("DRAW_TEXT "):
+                    args = [arg.strip() for arg in stmt[10:].split(",", 2)]
+                    if len(args) == 3:
+                        x = self.evaluate_expression(args[0])
+                        y = self.evaluate_expression(args[1])
+                        text = self.evaluate_expression(args[2])
+                        callback = self.graphics_callbacks.get("text")
+                        if callback:
+                            callback(x, y, text)
 
                 # PERHAPS ... FACT_ESTABLISHED conditional
                 elif stmt.startswith("PERHAPS "):

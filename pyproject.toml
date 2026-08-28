@@ -1,0 +1,12 @@
+[project]
+name = "lake-ontario-ide"
+version = "0.1.0"
+description = "Standalone Lake Ontario BASIC IDE and interpreter package."
+readme = "README.md"
+authors = [
+  { name = "James HoneyBadger" }
+]
+requires-python = ">=3.11"
+
+[project.scripts]
+lake-ontario-ide = "lake_ontario_ide.gui:main"

@@ -1,0 +1,29 @@
+10 EXCUSE_ME Farcical Lake Ontario Policy Demo
+20 LAND_ACKNOWLEDGEMENT "Kawartha Lakes and Honest Politics Territory"
+30 FACT_CHECK apology = SAY_SORRY("Sorry for your inconvenience, eh?")
+40 BROADCAST_CBC apology
+50 FACT_CHECK redistribution = MAKE_IT_RAIN(1000000)
+60 BROADCAST_CBC redistribution
+70 FACT_CHECK fare = PUBLIC_TRANSIT_FARE(12, 4.25)
+80 BROADCAST_CBC fare
+90 FACT_CHECK toque = TOQUE_WARMTH(-18)
+100 BROADCAST_CBC toque
+110 FACT_CHECK truth = TRUTH_METER(EVIDENCE_BASED)
+120 BROADCAST_CBC truth
+130 FACT_CHECK winter = MAKE_IT_SNOW("climate protest season", 250)
+140 BROADCAST_CBC winter
+150 FACT_CHECK math = 5 MAPLE_SYRUP 2
+160 BROADCAST_CBC "Maple syrup modulus result: " + FORMAT_CURRENCY(math)
+170 FACT_CHECK amped = 2 MOONSHOT 10
+180 BROADCAST_CBC "Moonshot math: " + FORMAT_CURRENCY(amped)
+190 FAT_CATS_TAX 2500000
+200 DONUT_DIVIDEND 1000
+210 NATIONAL_STOOGE "The people will definitely love this policy."
+220 GREEN_NEW_DEAL "Zero-emission buses for every province"
+230 RHETORICAL_QUESTION "Is evidence-based policy obviously better?"
+240 LOONIE_LOOP 5
+250 SOCIAL_LICENSE "Climate Action Coalition"
+260 ELECTORATE_PULSE 87.5
+270 NATIONAL_HEALTHCARE
+280 BROADCAST_CBC "Farcical policy demo complete."
+290 IMPEACH
