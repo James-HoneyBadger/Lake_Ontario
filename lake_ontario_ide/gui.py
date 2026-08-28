@@ -13,10 +13,13 @@ try:
     from tkinter import filedialog, messagebox, simpledialog, ttk
     from tkinter.scrolledtext import ScrolledText
 except ImportError:
-    sys.stderr.write("Tkinter is required for the Lake Ontario BASIC GUI IDE. Install python3-tk and try again.\n")
+    sys.stderr.write(
+        "Tkinter is required for the Lake Ontario BASIC GUI IDE. Install "
+        "python3-tk and try again.\n"
+    )
     sys.exit(1)
 
-from interpreter import LakeOntarioInterpreter
+from interpreter import LakeOntarioInterpreter, LakeOntarioInterpreterError
 
 DEFAULT_SCRIPT_TEMPLATE = """10 EXCUSE_ME Lake Ontario BASIC GUI demo script
 20 LAND_ACKNOWLEDGEMENT \"Traditional Territory\"
@@ -86,15 +89,34 @@ class LakeOntarioIDEGUI:
 
         editor_header = ttk.Frame(editor_panel)
         editor_header.pack(fill="x", pady=(4, 0))
-        ttk.Label(editor_header, text="Code Editor", font=(None, 11, "bold")).pack(side="left", padx=6)
+        ttk.Label(editor_header, text="Code Editor", font=(None, 11, "bold")).pack(
+            side="left", padx=6
+        )
 
         editor_body = ttk.Frame(editor_panel)
         editor_body.pack(fill="both", expand=True, padx=6, pady=6)
 
-        self.line_numbers = tk.Text(editor_body, width=4, padx=4, takefocus=False, border=0, background="#282c34", foreground="#6a9955", state="disabled")
+        self.line_numbers = tk.Text(
+            editor_body,
+            width=4,
+            padx=4,
+            takefocus=False,
+            border=0,
+            background="#282c34",
+            foreground="#6a9955",
+            state="disabled",
+        )
         self.line_numbers.pack(side="left", fill="y")
 
-        self.editor = ScrolledText(editor_body, wrap="none", undo=True, font=("Consolas", 12), background="#1e1e1e", foreground="#dcdcdc", insertbackground="#ffffff")
+        self.editor = ScrolledText(
+            editor_body,
+            wrap="none",
+            undo=True,
+            font=("Consolas", 12),
+            background="#1e1e1e",
+            foreground="#dcdcdc",
+            insertbackground="#ffffff",
+        )
         self.editor.pack(side="left", fill="both", expand=True)
         self.editor.bind("<KeyRelease>", self._on_editor_change)
         self.editor.bind("<ButtonRelease-1>", self._on_editor_change)
@@ -112,18 +134,35 @@ class LakeOntarioIDEGUI:
         self.notebook.add(graphics_tab, text="Graphics")
         self.notebook.add(help_tab, text="Help")
 
-        self.output = ScrolledText(output_tab, wrap="word", state="disabled", height=12, background="#111111", foreground="#f1f1f1")
+        self.output = ScrolledText(
+            output_tab,
+            wrap="word",
+            state="disabled",
+            height=12,
+            background="#111111",
+            foreground="#f1f1f1",
+        )
         self.output.pack(fill="both", expand=True, padx=6, pady=6)
 
         graphics_header = ttk.Frame(graphics_tab)
         graphics_header.pack(fill="x", pady=(6, 0), padx=6)
-        ttk.Label(graphics_header, text="Graphics Canvas", font=(None, 11, "bold")).pack(side="left")
-        ttk.Button(graphics_header, text="Clear", command=self.clear_canvas).pack(side="right")
+        ttk.Label(
+            graphics_header, text="Graphics Canvas", font=(None, 11, "bold")
+        ).pack(side="left")
+        ttk.Button(graphics_header, text="Clear", command=self.clear_canvas).pack(
+            side="right"
+        )
 
         self.canvas = tk.Canvas(graphics_tab, bg=self.canvas_bg, bd=2, relief="sunken")
         self.canvas.pack(fill="both", expand=True, padx=6, pady=6)
 
-        self.help_text = ScrolledText(help_tab, wrap="word", state="disabled", background="#111111", foreground="#f1f1f1")
+        self.help_text = ScrolledText(
+            help_tab,
+            wrap="word",
+            state="disabled",
+            background="#111111",
+            foreground="#f1f1f1",
+        )
         self.help_text.pack(fill="both", expand=True, padx=6, pady=6)
         self.help_text.configure(state="normal")
         self.help_text.insert("1.0", self._build_help_text())
@@ -131,9 +170,13 @@ class LakeOntarioIDEGUI:
 
         status_frame = ttk.Frame(self.root, style="Status.TFrame")
         status_frame.pack(fill="x")
-        self.status_path = ttk.Label(status_frame, text="No file", style="Status.TLabel")
+        self.status_path = ttk.Label(
+            status_frame, text="No file", style="Status.TLabel"
+        )
         self.status_path.pack(side="left", padx=6)
-        self.status_state = ttk.Label(status_frame, text="Ready.", style="Status.TLabel")
+        self.status_state = ttk.Label(
+            status_frame, text="Ready.", style="Status.TLabel"
+        )
         self.status_state.pack(side="right", padx=6)
 
     def _build_menu(self):
@@ -143,7 +186,9 @@ class LakeOntarioIDEGUI:
         file_menu.add_command(label="New", command=self.new_script)
         file_menu.add_command(label="Open...", command=self.open_script)
         file_menu.add_command(label="Save", command=self.save_script)
-        file_menu.add_command(label="Save As...", command=lambda: self.save_script(save_as=True))
+        file_menu.add_command(
+            label="Save As...", command=lambda: self.save_script(save_as=True)
+        )
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.quit)
         menubar.add_cascade(label="File", menu=file_menu)
@@ -169,9 +214,9 @@ class LakeOntarioIDEGUI:
         help_text = "Lake Ontario BASIC GUI IDE Command Reference\n\n"
         help_text += "Supported GUI commands:\n"
         help_text += "  INPUT_BOX variable_name\n"
-        help_text += "  SET_PEN_COLOR \"color\"\n"
-        help_text += "  SET_FILL_COLOR \"color\"\n"
-        help_text += "  SET_CANVAS_BG \"color\"\n"
+        help_text += '  SET_PEN_COLOR "color"\n'
+        help_text += '  SET_FILL_COLOR "color"\n'
+        help_text += '  SET_CANVAS_BG "color"\n'
         help_text += "  FILL_RECTANGLE x, y, width, height\n"
         help_text += "  FILL_CIRCLE x, y, radius\n"
         help_text += "  DRAW_LINE x1, y1, x2, y2\n"
@@ -180,7 +225,8 @@ class LakeOntarioIDEGUI:
         help_text += "  DRAW_TEXT x, y, text\n"
         help_text += "  WAIT milliseconds\n\n"
         help_text += "Use TOWN_HALL and INPUT_BOX to gather user input in dialogs.\n"
-        help_text += "Set canvas colors with SET_CANVAS_BG, SET_PEN_COLOR, and SET_FILL_COLOR.\n\n"
+        help_text += "Set canvas colors with SET_CANVAS_BG, SET_PEN_COLOR, "
+        "and SET_FILL_COLOR.\n\n"
         help_text += "Command Reference:\n"
         help_text += self._load_command_reference()
         return help_text
@@ -197,21 +243,27 @@ class LakeOntarioIDEGUI:
             self.notebook.select(2)
 
     def _show_about(self):
-        messagebox.showinfo("About", "Lake Ontario BASIC GUI IDE\n\nA polished interface for the Lake Ontario BASIC interpreter.")
+        messagebox.showinfo(
+            "About",
+            "Lake Ontario BASIC GUI IDE\n\nA polished interface for the Lake Ontario "
+            "BASIC interpreter.",
+        )
 
     def _configure_interpreter(self):
         self.interpreter = LakeOntarioInterpreter()
         self.interpreter.set_input_callback(self.prompt_input)
-        self.interpreter.set_graphics_callbacks({
-            "clear": self.clear_canvas,
-            "line": self.draw_line,
-            "rectangle": self.draw_rectangle,
-            "circle": self.draw_circle,
-            "text": self.draw_text,
-            "pen_color": self.set_pen_color,
-            "fill_color": self.set_fill_color,
-            "canvas_bg": self.set_canvas_background,
-        })
+        self.interpreter.set_graphics_callbacks(
+            {
+                "clear": self.clear_canvas,
+                "line": self.draw_line,
+                "rectangle": self.draw_rectangle,
+                "circle": self.draw_circle,
+                "text": self.draw_text,
+                "pen_color": self.set_pen_color,
+                "fill_color": self.set_fill_color,
+                "canvas_bg": self.set_canvas_background,
+            }
+        )
 
     def new_script(self):
         self.current_path = None
@@ -226,7 +278,11 @@ class LakeOntarioIDEGUI:
     def open_script(self):
         path = filedialog.askopenfilename(
             title="Open Lake Ontario BASIC script",
-            filetypes=[("Lake Ontario BASIC", "*.lo"), ("Text files", "*.txt"), ("All files", "*")]
+            filetypes=[
+                ("Lake Ontario BASIC", "*.lo"),
+                ("Text files", "*.txt"),
+                ("All files", "*"),
+            ],
         )
         if not path:
             return
@@ -253,7 +309,11 @@ class LakeOntarioIDEGUI:
             path = filedialog.asksaveasfilename(
                 title="Save Lake Ontario BASIC script",
                 defaultextension=".lo",
-                filetypes=[("Lake Ontario BASIC", "*.lo"), ("Text files", "*.txt"), ("All files", "*")]
+                filetypes=[
+                    ("Lake Ontario BASIC", "*.lo"),
+                    ("Text files", "*.txt"),
+                    ("All files", "*"),
+                ],
             )
             if not path:
                 return
@@ -281,7 +341,15 @@ class LakeOntarioIDEGUI:
         try:
             with contextlib.redirect_stdout(buffer):
                 self.interpreter.run()
-        except Exception as exc:
+        except (
+            LakeOntarioInterpreterError,
+            OSError,
+            ValueError,
+            TypeError,
+            ZeroDivisionError,
+            SyntaxError,
+            NameError,
+        ) as exc:
             self.append_output(f"🚨 Runtime error: {exc}\n")
             self._update_status("Execution failed.")
         else:
@@ -393,10 +461,10 @@ class LakeOntarioIDEGUI:
     def _as_number(self, value):
         try:
             return float(value)
-        except Exception:
+        except (TypeError, ValueError):
             try:
                 return float(str(value))
-            except Exception:
+            except (TypeError, ValueError):
                 return 0.0
 
     def _update_line_numbers(self):
@@ -434,7 +502,7 @@ class LakeOntarioIDEGUI:
 
 def main():
     root = tk.Tk()
-    app = LakeOntarioIDEGUI(root)
+    LakeOntarioIDEGUI(root)
     root.mainloop()
 
 

@@ -2,7 +2,8 @@
 """
 Lake Ontario BASIC IDE
 
-A lightweight command-line IDE for editing, running, and exploring Lake Ontario BASIC scripts.
+ \A lightweight command-line IDE for editing, running, and exploring Lake Ontario
+BASIC scripts.
 """
 
 import os
@@ -10,7 +11,8 @@ import re
 import shutil
 import subprocess
 import sys
-from interpreter import LakeOntarioInterpreter
+
+from interpreter import LakeOntarioInterpreter, LakeOntarioInterpreterError
 
 EXAMPLES_DIR = "examples"
 
@@ -136,9 +138,9 @@ Examples:
 
 def clear_screen():
     if os.name == "nt":
-        subprocess.run(["cmd", "/c", "cls"])
+        subprocess.run(["cmd", "/c", "cls"], check=False)
     else:
-        subprocess.run(["clear"])
+        subprocess.run(["clear"], check=False)
 
 
 def pause():
@@ -188,13 +190,28 @@ def validate_script(path):
         return [f"Unable to read script: {exc}"]
 
     known_prefixes = (
-        "LAND_ACKNOWLEDGEMENT", "HONEY_BADGER_MODE", "HONEY_BADGER_DONT_CARE",
-        "BADGER_BITE", "FACT_CHECK", "BROADCAST_CBC", "TOWN_HALL",
-        "PUBLISH_RESEARCH_FILE", "PERHAPS", "STILL_IN_DENIAL", "END_PERHAPS",
-        "WHILE_CLASS_CONSCIOUS", "CONTINUE_ORGANIZING", "COAST_TO_COAST",
-        "THANK_YOU_EH", "UNIVERSAL_HEALTHCARE", "EXECUTIVE_ORDER_BLOCKED",
-        "SUBPOENA", "RETURN_TO_OTTAWA", "GOLF_VACATION",
-        "CLIMATE_EMERGENCY", "IMPEACH",
+        "LAND_ACKNOWLEDGEMENT",
+        "HONEY_BADGER_MODE",
+        "HONEY_BADGER_DONT_CARE",
+        "BADGER_BITE",
+        "FACT_CHECK",
+        "BROADCAST_CBC",
+        "TOWN_HALL",
+        "PUBLISH_RESEARCH_FILE",
+        "PERHAPS",
+        "STILL_IN_DENIAL",
+        "END_PERHAPS",
+        "WHILE_CLASS_CONSCIOUS",
+        "CONTINUE_ORGANIZING",
+        "COAST_TO_COAST",
+        "THANK_YOU_EH",
+        "UNIVERSAL_HEALTHCARE",
+        "EXECUTIVE_ORDER_BLOCKED",
+        "SUBPOENA",
+        "RETURN_TO_OTTAWA",
+        "GOLF_VACATION",
+        "CLIMATE_EMERGENCY",
+        "IMPEACH",
     )
 
     for line_number, raw_line in enumerate(raw_lines, start=1):
@@ -205,31 +222,46 @@ def validate_script(path):
         match = re.match(r"^(\d+)\s+(.*)$", stripped)
         stmt = match.group(2).strip() if match else stripped
 
-        if not any(stmt.startswith(prefix) for prefix in known_prefixes):
-            if stmt not in ("STILL_IN_DENIAL", "END_PERHAPS"):
-                head = stmt.split()[0] if stmt.split() else stmt
-                errors.append(f"Line {line_number}: unsupported statement '{head}'")
-                continue
+        if not any(
+            stmt.startswith(prefix) for prefix in known_prefixes
+        ) and stmt not in (
+            "STILL_IN_DENIAL",
+            "END_PERHAPS",
+        ):
+            head = stmt.split()[0] if stmt.split() else stmt
+            errors.append(f"Line {line_number}: unsupported statement '{head}'")
+            continue
 
         if stmt.startswith("FACT_CHECK") and "=" not in stmt:
             errors.append(f"Line {line_number}: FACT_CHECK statement must include '='")
         elif stmt.startswith("COAST_TO_COAST") and " UP_TO " not in stmt:
-            errors.append(f"Line {line_number}: COAST_TO_COAST statement must include 'UP_TO'")
+            errors.append(
+                f"Line {line_number}: COAST_TO_COAST statement must include 'UP_TO'"
+            )
         elif stmt.startswith("PUBLISH_RESEARCH_FILE") and "," not in stmt:
-            errors.append(f"Line {line_number}: PUBLISH_RESEARCH_FILE must separate path and content with a comma")
+            errors.append(
+                f"Line {line_number}: PUBLISH_RESEARCH_FILE must separate path "
+                "and content with a comma"
+            )
         elif stmt.startswith("SUBPOENA"):
             target_text = stmt[9:].strip()
             if not target_text.isdigit():
-                errors.append(f"Line {line_number}: SUBPOENA must target a numbered line")
+                errors.append(
+                    f"Line {line_number}: SUBPOENA must target a numbered line"
+                )
         elif stmt.startswith("GOLF_VACATION"):
             value = stmt[14:].strip()
             try:
                 float(value)
             except ValueError:
-                errors.append(f"Line {line_number}: GOLF_VACATION requires a numeric value")
+                errors.append(
+                    f"Line {line_number}: GOLF_VACATION requires a numeric value"
+                )
         elif stmt.startswith("CLIMATE_EMERGENCY"):
             if not stmt[18:].strip():
-                errors.append(f"Line {line_number}: CLIMATE_EMERGENCY requires a message")
+                errors.append(
+                    f"Line {line_number}: CLIMATE_EMERGENCY requires a message"
+                )
         elif stmt.startswith("TOWN_HALL") and not stmt[10:].strip():
             errors.append(f"Line {line_number}: TOWN_HALL requires a variable name")
 
@@ -258,8 +290,8 @@ def edit_script(path):
     if not os.path.exists(path):
         with open(path, "w", encoding="utf-8") as f:
             f.write("10 EXCUSE_ME Lake Ontario BASIC script created by the IDE\n")
-            f.write("20 LAND_ACKNOWLEDGEMENT \"Traditional Territory\"\n")
-            f.write("30 FACT_CHECK greeting = \"Hello from Lake Ontario BASIC!\"\n")
+            f.write('20 LAND_ACKNOWLEDGEMENT "Traditional Territory"\n')
+            f.write('30 FACT_CHECK greeting = "Hello from Lake Ontario BASIC!"\n')
             f.write("40 BROADCAST_CBC greeting\n")
 
     editor = os.environ.get("EDITOR")
@@ -270,7 +302,7 @@ def edit_script(path):
         return
 
     try:
-        subprocess.run([editor, path])
+        subprocess.run([editor, path], check=False)
     except OSError:
         print(f"Unable to launch editor: {editor}")
 
@@ -304,7 +336,7 @@ def run_script(path):
     print(f"\nRunning {path}...\n")
     try:
         interpreter.run()
-    except Exception as exc:
+    except LakeOntarioInterpreterError as exc:
         print(f"\nIDE runtime error: {exc}")
 
 

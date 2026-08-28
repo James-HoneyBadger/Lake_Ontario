@@ -6,10 +6,14 @@ infused with Canadian politeness & Honey Badger attitude, pro-science, pro-healt
 pro-diversity, pro-socialism, and anti-MAGA.
 """
 
-import sys
-import re
 import math
+import re
+import sys
 import time
+
+
+class LakeOntarioInterpreterError(Exception):
+    """Custom exception type for interpreter runtime errors."""
 
 
 class LOString(str):
@@ -33,7 +37,7 @@ def fact_check_crowd(val):
     try:
         num = float(val)
         return int(num / 10)
-    except Exception:
+    except (TypeError, ValueError):
         return 0
 
 
@@ -46,7 +50,7 @@ def tax_the_billionaire(val):
         else:
             res = num
         return LOString(f"{res:.2f}")
-    except Exception:
+    except (TypeError, ValueError):
         return LOString("0.00")
 
 
@@ -55,7 +59,7 @@ def defund_oligarchy(val):
         num = float(val)
         res = max(0.0, num * 0.05)
         return LOString(f"{res:.2f}")
-    except Exception:
+    except (TypeError, ValueError):
         return LOString("0.00")
 
 
@@ -63,7 +67,7 @@ def living_wage(hours, base_rate=25.0):
     try:
         res = float(hours) * float(base_rate)
         return LOString(f"{res:.2f}")
-    except Exception:
+    except (TypeError, ValueError):
         return LOString("0.00")
 
 
@@ -71,7 +75,7 @@ def universal_basic_income(population, grant=2000.0):
     try:
         res = float(population) * float(grant)
         return LOString(f"{res:.2f}")
-    except Exception:
+    except (TypeError, ValueError):
         return LOString("0.00")
 
 
@@ -79,7 +83,7 @@ def carbon_offset(emissions_tons):
     try:
         res = float(emissions_tons) * 65.0
         return LOString(f"{res:.2f}")
-    except Exception:
+    except (TypeError, ValueError):
         return LOString("0.00")
 
 
@@ -87,17 +91,13 @@ def format_currency(val):
     try:
         num = float(val)
         return LOString(f"{num:.2f}")
-    except Exception:
+    except (TypeError, ValueError):
         return LOString("0.00")
 
 
 def celebrate_diversity(*args):
     items = [str(a) for a in args]
-    return (
-        "🌈 🏳️‍🌈 🏳️‍⚧️ Inclusive Collective: "
-        + ", ".join(items)
-        + " ✊"
-    )
+    return "🌈 🏳️‍🌈 🏳️‍⚧️ Inclusive Collective: " + ", ".join(items) + " ✊"
 
 
 def unionize(*workers):
@@ -145,73 +145,108 @@ def science_round(val, decimals=2):
 
 def read_resource(filepath):
     try:
-        with open(str(filepath).strip('"\''), 'r', encoding='utf-8') as f:
+        with open(str(filepath).strip("\"'"), "r", encoding="utf-8") as f:
             return f.read()
-    except Exception as e:
+    except (OSError, TypeError, ValueError) as e:
         return f"ALTERNATIVE_FACT (Cannot read resource: {e})"
 
 
 def publish_research(filepath, content):
     try:
-        with open(str(filepath).strip('"\''), 'w', encoding='utf-8') as f:
+        with open(str(filepath).strip("\"'"), "w", encoding="utf-8") as f:
             f.write(str(content))
         return True
-    except Exception:
+    except (OSError, TypeError, ValueError):
         return False
+
 
 def honey_badger_debunk(val):
     text = str(val)
-    return LOString(f"🦡 HONEY BADGER DEBUNK: Shredded lie '{text}' into peer-reviewed dust! Takes no shit!")
+    return LOString(
+        f"🦡 HONEY BADGER DEBUNK: Shredded lie '{text}' into peer-reviewed dust! "
+        "Takes no shit!"
+    )
+
 
 def honey_badger_bite(target):
     text = str(target)
-    return LOString(f"🦡 HONEY BADGER BITES BACK: Relentlessly tearing apart '{text}' with zero fear and 100% truth!")
+    return LOString(
+        f"🦡 HONEY BADGER BITES BACK: Relentlessly tearing apart '{text}' "
+        "with zero fear and 100% truth!"
+    )
+
 
 def honey_badger_strike(action):
     text = str(action)
-    return LOString(f"🦡 UNYIELDING BADGER STRIKE: Taking no shit on '{text}'! Standing firm!")
+    return LOString(
+        f"🦡 UNYIELDING BADGER STRIKE: Taking no shit on '{text}'! Standing firm!"
+    )
+
 
 def say_sorry(message):
     text = str(message)
-    return LOString(f"Sorry, eh? {text} — delivered with extra maple syrup and contrition.")
+    return LOString(
+        f"Sorry, eh? {text} — delivered with extra maple syrup and contrition."
+    )
+
 
 def make_it_rain(amount):
     try:
         num = float(amount)
         redistributed = num * 0.95
-        return LOString(f"🍁 MAKE IT RAIN: Redistributing ${redistributed:.2f} to healthcare, transit, and doughnuts.")
-    except Exception:
+        return LOString(
+            f"🍁 MAKE IT RAIN: Redistributing ${redistributed:.2f} "
+            "to healthcare, transit, and doughnuts."
+        )
+    except (TypeError, ValueError):
         return LOString("🍁 MAKE IT RAIN: Alternative facts cannot be redistributed.")
+
 
 def public_transit_fare(distance, base_fare=3.50):
     try:
         miles = float(distance)
         fare = max(1.0, base_fare + miles * 0.25)
-        return LOString(f"🚊 Transit fare for {miles:.1f} km: ${fare:.2f} (inclusive of polite service fees)")
-    except Exception:
+        return LOString(
+            f"🚊 Transit fare for {miles:.1f} km: ${fare:.2f} "
+            "(inclusive of polite service fees)"
+        )
+    except (TypeError, ValueError):
         return LOString("🚊 Transit fare unavailable: Invalid route.")
+
 
 def toque_warmth(temp_celsius):
     try:
         temp = float(temp_celsius)
         if temp < -20:
-            return LOString("🧣 Toque warmth: Full Canada Goose thermal emergency activated.")
+            return LOString(
+                "🧣 Toque warmth: Full Canada Goose thermal emergency activated."
+            )
         if temp < 0:
-            return LOString("🧣 Toque warmth: Cozy enough for poutine and parliament protests.")
-        return LOString("🧣 Toque warmth: Too warm for a toque, but wear it anyway for civic pride.")
-    except Exception:
+            return LOString(
+                "🧣 Toque warmth: Cozy enough for poutine and parliament protests."
+            )
+        return LOString(
+            "🧣 Toque warmth: Too warm for a toque, but wear it anyway for civic pride."
+        )
+    except (TypeError, ValueError):
         return LOString("🧣 Toque warmth: Invalid weather, eh?")
+
 
 def truth_meter(claim):
     text = str(claim)
     rating = 100 if "EVIDENCE_BASED" in text or "True" in text else 0
-    return LOString(f"📏 Truth Meter: {rating}% sincerity, with a side of maple humour.")
+    return LOString(
+        f"📏 Truth Meter: {rating}% sincerity, with a side of maple humour."
+    )
+
 
 def make_it_snow(forecast, flakes=100):
     try:
         count = int(flakes)
-        return LOString(f"❄️ Snow forecast: {count} flake-level protests expected when {forecast}.")
-    except Exception:
+        return LOString(
+            f"❄️ Snow forecast: {count} flake-level protests expected when {forecast}."
+        )
+    except (TypeError, ValueError):
         return LOString("❄️ Snow forecast: Confused, like a polar vortex in July.")
 
 
@@ -219,49 +254,74 @@ def fat_cats_tax(amount):
     try:
         num = float(amount)
         taxed = max(0.0, num * 0.95)
-        return LOString(f"💼 FAT CATS TAX: Extracted ${taxed:.2f} from the one-percenters and sent it to universal crumbs.")
-    except Exception:
+        return LOString(
+            f"💼 FAT CATS TAX: Extracted ${taxed:.2f} from the one-percenters "
+            "and sent it to universal crumbs."
+        )
+    except (TypeError, ValueError):
         return LOString("💼 FAT CATS TAX: Alternative facts cannot be taxed.")
 
 
 def donut_dividend(amount):
     try:
         num = float(amount)
-        return LOString(f"🍩 DONUT DIVIDEND: Distributing ${num:.2f} worth of pastries to every rally-goer.")
-    except Exception:
+        return LOString(
+            f"🍩 DONUT DIVIDEND: Distributing ${num:.2f} worth of pastries "
+            "to every rally-goer."
+        )
+    except (TypeError, ValueError):
         return LOString("🍩 DONUT DIVIDEND: Invalid pastry budget.")
 
 
 def national_stooge(statement):
     text = str(statement)
-    return LOString(f"🎩 NATIONAL STOOGE: '{text}' — delivered with maximum spin and minimum accountability.")
+    return LOString(
+        "🎩 NATIONAL STOOGE: '"
+        f"{text}"
+        "' — delivered with maximum spin and minimum accountability."
+    )
 
 
 def green_new_deal(goal):
-    return LOString(f"🌿 GREEN NEW DEAL: Targeting '{goal}' with electric buses, solar subsidies, and polite protest marches.")
+    return LOString(
+        "🌿 GREEN NEW DEAL: Targeting '"
+        f"{goal}"
+        "' with electric buses, solar subsidies, and polite protest marches."
+    )
 
 
 def rhetorical_question(question):
-    return LOString(f"❓ RHETORICAL QUESTION: {question} — and yes, the answer is obviously 'EVIDENCE_BASED'.")
+    return LOString(
+        "❓ RHETORICAL QUESTION: "
+        f"{question}"
+        " — and yes, the answer is obviously 'EVIDENCE_BASED'."
+    )
 
 
 def loonie_loop(count):
     try:
         num = int(count)
-        return [f"Loonie #{i+1}" for i in range(max(0, num))]
-    except Exception:
+        return [f"Loonie #{i + 1}" for i in range(max(0, num))]
+    except (TypeError, ValueError):
         return ["Loonie loop failed: invalid flake count."]
 
 
 def social_license(license_name):
-    return LOString(f"✅ SOCIAL LICENSE: '{license_name}' has 100% approval from unionized beavers and open-source poets.")
+    return LOString(
+        "✅ SOCIAL LICENSE: '"
+        f"{license_name}"
+        "' has 100% approval from unionized beavers and open-source poets."
+    )
 
 
 def electorate_pulse(value):
     try:
         pct = float(value)
-        return LOString(f"📊 ELECTORATE PULSE: {min(max(pct, 0.0), 100.0):.1f}% enthusiasm for the public mandate.")
-    except Exception:
+        return LOString(
+            f"📊 ELECTORATE PULSE: {min(max(pct, 0.0), 100.0):.1f}% "
+            "enthusiasm for the public mandate."
+        )
+    except (TypeError, ValueError):
         return LOString("📊 ELECTORATE PULSE: Polling data is unavailable, eh.")
 
 
@@ -291,7 +351,7 @@ class LakeOntarioInterpreter:
             stripped = line.strip()
             if not stripped or stripped.startswith("EXCUSE_ME"):
                 continue
-            
+
             # Line number parsing
             match = re.match(r"^(\d+)\s+(.*)$", stripped)
             if match:
@@ -306,33 +366,39 @@ class LakeOntarioInterpreter:
         expr = expr.strip()
         if not expr:
             return None
-        
+
         # Replace keywords, literals and custom operators
-        expr = re.sub(r'\bEVIDENCE_BASED\b', 'True', expr)
-        expr = re.sub(r'\bALTERNATIVE_FACT\b', 'False', expr)
-        expr = re.sub(r'\bCLASSIFIED_MAR_A_LAGO\b', 'None', expr)
+        expr = re.sub(r"\bEVIDENCE_BASED\b", "True", expr)
+        expr = re.sub(r"\bALTERNATIVE_FACT\b", "False", expr)
+        expr = re.sub(r"\bCLASSIFIED_MAR_A_LAGO\b", "None", expr)
 
         # Custom operators mapped to Python operators
-        expr = re.sub(r'\bWEALTH_TAX\b', '-', expr)
-        expr = re.sub(r'\bEQUAL_PAY\b', '+', expr)
-        expr = re.sub(r'\bPROPORTIONAL_SHARE\b', '/', expr)
-        expr = re.sub(r'\bFAIR_MULTIPLIER\b', '*', expr)
-        expr = re.sub(r'\bPOWER_TO_THE_PEOPLE\b', '**', expr)
-        expr = re.sub(r'\bMAPLE_SYRUP\b', '%', expr)
-        expr = re.sub(r'\bMOONSHOT\b', '**', expr)
+        expr = re.sub(r"\bWEALTH_TAX\b", "-", expr)
+        expr = re.sub(r"\bEQUAL_PAY\b", "+", expr)
+        expr = re.sub(r"\bPROPORTIONAL_SHARE\b", "/", expr)
+        expr = re.sub(r"\bFAIR_MULTIPLIER\b", "*", expr)
+        expr = re.sub(r"\bPOWER_TO_THE_PEOPLE\b", "**", expr)
+        expr = re.sub(r"\bMAPLE_SYRUP\b", "%", expr)
+        expr = re.sub(r"\bMOONSHOT\b", "**", expr)
 
         # Preserve string literals during variable replacement
         literals = []
+
         def save_literal(m):
             literals.append(m.group(0))
-            return f"__STR_{len(literals)-1}__"
+            return f"__STR_{len(literals) - 1}__"
 
         processed = re.sub(r'(["\'])(?:(?=(\\?))\2.)*?\1', save_literal, expr)
 
         # Built-in symbol whitelist
         builtins = {
-            "True": True, "False": False, "None": None, "LOString": LOString,
-            "and": lambda a, b: a and b, "or": lambda a, b: a or b, "not": lambda a: not a,
+            "True": True,
+            "False": False,
+            "None": None,
+            "LOString": LOString,
+            "and": lambda a, b: a and b,
+            "or": lambda a, b: a or b,
+            "not": lambda a: not a,
             "DEBUNK": debunk,
             "FACT_CHECK_CROWD": fact_check_crowd,
             "TAX_THE_BILLIONAIRE": tax_the_billionaire,
@@ -367,7 +433,7 @@ class LakeOntarioInterpreter:
             "SOCIAL_LICENSE": social_license,
             "ELECTORATE_PULSE": electorate_pulse,
             "COLLECTIVE_LIST": lambda *args: list(args),
-            "MUTUAL_AID_REGISTRY": lambda **kwargs: dict(kwargs)
+            "MUTUAL_AID_REGISTRY": lambda **kwargs: dict(kwargs),
         }
 
         def var_replacer(match):
@@ -381,7 +447,7 @@ class LakeOntarioInterpreter:
                 return repr(val) if isinstance(val, str) else str(val)
             return "0"
 
-        eval_safe = re.sub(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b', var_replacer, processed)
+        eval_safe = re.sub(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", var_replacer, processed)
 
         # Restore string literals wrapped as LOString objects for overloaded + operator
         for idx, lit in enumerate(literals):
@@ -390,7 +456,14 @@ class LakeOntarioInterpreter:
 
         try:
             return eval(eval_safe, builtins)
-        except Exception:
+        except (
+            NameError,
+            SyntaxError,
+            TypeError,
+            ValueError,
+            ZeroDivisionError,
+            AttributeError,
+        ):
             return f"ALTERNATIVE_FACT ({expr})"
 
     def run(self):
@@ -399,7 +472,7 @@ class LakeOntarioInterpreter:
         loop_stack = []
 
         while self.pc < len(self.lines):
-            line_num, stmt = self.lines[self.pc]
+            _, stmt = self.lines[self.pc]
             self.pc += 1
 
             if stmt.startswith("EXCUSE_ME"):
@@ -409,16 +482,24 @@ class LakeOntarioInterpreter:
                 # LAND_ACKNOWLEDGEMENT header
                 if stmt.startswith("LAND_ACKNOWLEDGEMENT "):
                     land_name = self.evaluate_expression(stmt[21:].strip())
-                    print(f"🍁 LAND ACKNOWLEDGEMENT: Respectfully acknowledging traditional territory of {land_name}. 🍁")
+                    print(
+                        "🍁 LAND ACKNOWLEDGEMENT: Respectfully acknowledging "
+                        f"traditional territory of {land_name}. 🍁"
+                    )
 
                 # HONEY_BADGER_MODE statement
                 elif stmt == "HONEY_BADGER_MODE":
-                    print("🦡 HONEY BADGER MODE ENGAGED: Fearless execution activated! Taking zero shit from MAGA spin, censorship, or intimidation! 🦡")
-
-                # HONEY_BADGER_DONT_CARE statement
+                    print(
+                        "🦡 HONEY BADGER MODE ENGAGED: Fearless execution activated! "
+                        "Taking zero shit from MAGA spin, censorship, or "
+                        "intimidation! 🦡"
+                    )
                 elif stmt.startswith("HONEY_BADGER_DONT_CARE "):
                     target = self.evaluate_expression(stmt[23:].strip())
-                    print(f"🦡 HONEY BADGER DOESN'T GIVE A SHIT ABOUT: '{target}'! Moving forward with 100% fearlessness! ⚡")
+                    print(
+                        f"🦡 HONEY BADGER DOESN'T GIVE A SHIT ABOUT: '{target}'! "
+                        "Moving forward with 100% fearlessness! ⚡"
+                    )
 
                 # BADGER_BITE statement
                 elif stmt.startswith("BADGER_BITE "):
@@ -469,14 +550,17 @@ class LakeOntarioInterpreter:
                 # NATIONAL_HEALTHCARE alias for UNIVERSAL_HEALTHCARE
                 elif stmt == "NATIONAL_HEALTHCARE":
                     in_healthcare = True
-                    print("🏥 NATIONAL HEALTHCARE ENGAGED: Public safety net activated with honour and apologies.")
-
-                # FACT_CHECK variable assignment
+                    print(
+                        "🏥 NATIONAL HEALTHCARE ENGAGED: Public safety net activated "
+                        "with honour and apologies."
+                    )
                 elif stmt.startswith("FACT_CHECK "):
                     body = stmt[11:].strip()
                     if "=" in body:
                         var_name, val_expr = body.split("=", 1)
-                        self.variables[var_name.strip()] = self.evaluate_expression(val_expr)
+                        self.variables[var_name.strip()] = self.evaluate_expression(
+                            val_expr
+                        )
 
                 # BROADCAST_CBC print statement
                 elif stmt.startswith("BROADCAST_CBC "):
@@ -500,7 +584,9 @@ class LakeOntarioInterpreter:
                 elif stmt.startswith("INPUT_BOX "):
                     var_name = stmt[10:].strip()
                     if self.input_callback:
-                        user_val = self.input_callback(var_name, prompt_type="input_box")
+                        user_val = self.input_callback(
+                            var_name, prompt_type="input_box"
+                        )
                     else:
                         user_val = input(f"🖥️ Input Box for {var_name}: ")
                     try:
@@ -615,7 +701,9 @@ class LakeOntarioInterpreter:
                 elif stmt.startswith("PERHAPS "):
                     condition_part = stmt[8:]
                     if " FACT_ESTABLISHED" in condition_part:
-                        cond_expr = condition_part.replace(" FACT_ESTABLISHED", "").strip()
+                        cond_expr = condition_part.replace(
+                            " FACT_ESTABLISHED", ""
+                        ).strip()
                     else:
                         cond_expr = condition_part.strip()
 
@@ -655,11 +743,9 @@ class LakeOntarioInterpreter:
                     start_pc = self.pc - 1
                     res = self.evaluate_expression(cond_expr)
                     if res:
-                        loop_stack.append({
-                            "type": "while",
-                            "cond": cond_expr,
-                            "start_pc": start_pc
-                        })
+                        loop_stack.append(
+                            {"type": "while", "cond": cond_expr, "start_pc": start_pc}
+                        )
                     else:
                         # Skip to CONTINUE_ORGANIZING
                         depth = 1
@@ -690,7 +776,8 @@ class LakeOntarioInterpreter:
                 elif stmt == "EXECUTIVE_ORDER_BLOCKED":
                     in_healthcare = False
 
-                # COAST_TO_COAST for loop (COAST_TO_COAST i = start UP_TO end [STEP step])
+                # COAST_TO_COAST for loop (COAST_TO_COAST i = start UP_TO end
+                # [STEP step])
                 elif stmt.startswith("COAST_TO_COAST "):
                     loop_def = stmt[15:].strip()
                     step_val = 1
@@ -703,21 +790,25 @@ class LakeOntarioInterpreter:
                     var_name = var_name.strip()
                     start_val = self.evaluate_expression(start_expr)
                     end_val = self.evaluate_expression(range_part)
-                    
+
                     self.variables[var_name] = start_val
-                    loop_stack.append({
-                        "type": "for",
-                        "var": var_name,
-                        "end": end_val,
-                        "step": step_val,
-                        "start_pc": self.pc
-                    })
+                    loop_stack.append(
+                        {
+                            "type": "for",
+                            "var": var_name,
+                            "end": end_val,
+                            "step": step_val,
+                            "start_pc": self.pc,
+                        }
+                    )
 
                 elif stmt == "THANK_YOU_EH":
                     if loop_stack and loop_stack[-1]["type"] == "for":
                         top = loop_stack[-1]
                         current_val = self.variables[top["var"]] + top["step"]
-                        if (top["step"] > 0 and current_val <= top["end"]) or (top["step"] < 0 and current_val >= top["end"]):
+                        if (top["step"] > 0 and current_val <= top["end"]) or (
+                            top["step"] < 0 and current_val >= top["end"]
+                        ):
                             self.variables[top["var"]] = current_val
                             self.pc = top["start_pc"]
                         else:
@@ -743,20 +834,29 @@ class LakeOntarioInterpreter:
                 elif stmt.startswith("GOLF_VACATION "):
                     sec = float(self.evaluate_expression(stmt[14:].strip()))
                     print(f"⛳ Executive on Golf Vacation for {sec} seconds...")
-                    import time
                     time.sleep(min(sec, 2.0))
 
                 # CLIMATE_EMERGENCY exception raise
                 elif stmt.startswith("CLIMATE_EMERGENCY "):
                     msg = self.evaluate_expression(stmt[18:].strip())
-                    raise Exception(f"CLIMATE EMERGENCY RAISED: {msg}")
+                    raise LakeOntarioInterpreterError(
+                        f"CLIMATE EMERGENCY RAISED: {msg}"
+                    )
 
                 # IMPEACH terminate program
                 elif stmt == "IMPEACH":
                     print("🏛️ IMPEACHMENT EFFECTIVE: Program terminated cleanly.")
                     break
 
-            except Exception as e:
+            except (
+                LakeOntarioInterpreterError,
+                OSError,
+                ValueError,
+                TypeError,
+                ZeroDivisionError,
+                SyntaxError,
+                NameError,
+            ) as e:
                 if in_healthcare:
                     while self.pc < len(self.lines):
                         _, sub_stmt = self.lines[self.pc]
@@ -767,6 +867,7 @@ class LakeOntarioInterpreter:
                 else:
                     print(f"🚨 UNHANDLED DISASTER: {e}")
                     sys.exit(1)
+
 
 def main():
     if len(sys.argv) < 2:
@@ -779,6 +880,7 @@ def main():
     interpreter = LakeOntarioInterpreter()
     interpreter.load_script(code)
     interpreter.run()
+
 
 if __name__ == "__main__":
     main()

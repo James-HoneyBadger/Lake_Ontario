@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Basic test harness for Lake Ontario BASIC interpreter."""
 
+import contextlib
 import os
 import sys
-from interpreter import LakeOntarioInterpreter
+from io import StringIO
+
+from interpreter import LakeOntarioInterpreter, LakeOntarioInterpreterError
 
 TEST_SCRIPTS = {
     "hello.lo": [
@@ -17,12 +20,21 @@ TEST_SCRIPTS = {
     ],
     "farcical_policy.lo": [
         "🍁 LAND ACKNOWLEDGEMENT: Respectfully acknowledging traditional territory",
-        "Sorry, eh? Sorry for your inconvenience, eh? — delivered with extra maple syrup",
-        "🍁 MAKE IT RAIN: Redistributing $950000.00 to healthcare, transit, and doughnuts.",
+        (
+            "Sorry, eh? Sorry for your inconvenience, eh? — delivered with extra "
+            "maple syrup"
+        ),
+        (
+            "🍁 MAKE IT RAIN: Redistributing $950000.00 to healthcare, "
+            "transit, and doughnuts."
+        ),
         "🚊 Transit fare for 12.0 km: $7.25",
         "🧣 Toque warmth: Cozy enough for poutine and parliament protests.",
         "📏 Truth Meter: 100% sincerity",
-        "❄️ Snow forecast: 250 flake-level protests expected when climate protest season.",
+        (
+            "❄️ Snow forecast: 250 flake-level protests expected when "
+            "climate protest season."
+        ),
     ],
     "gui_demo.lo": [
         "🍁 LAND ACKNOWLEDGEMENT: Respectfully acknowledging traditional territory",
@@ -43,12 +55,11 @@ def run_test(script_name, expected_lines):
 
     interpreter = LakeOntarioInterpreter()
     if script_name == "gui_demo.lo":
-        interpreter.set_input_callback(lambda var_name, prompt_type="town_hall": "GUI response")
+        interpreter.set_input_callback(
+            lambda var_name, prompt_type="town_hall": "GUI response"
+        )
     interpreter.load_script(code)
     try:
-        from io import StringIO
-        import contextlib
-
         output = StringIO()
         with contextlib.redirect_stdout(output):
             interpreter.run()
@@ -56,7 +67,9 @@ def run_test(script_name, expected_lines):
         result = output.getvalue().splitlines()
         for expected in expected_lines:
             if not any(expected in line for line in result):
-                sys.stdout.write(f"FAIL {script_name}: missing expected output '{expected}'\n")
+                sys.stdout.write(
+                    f"FAIL {script_name}: missing expected output '{expected}'\n"
+                )
                 sys.stdout.flush()
                 return False
         sys.stdout.write(f"PASS {script_name}\n")
@@ -66,7 +79,15 @@ def run_test(script_name, expected_lines):
         sys.stdout.write(f"FAIL {script_name}: interpreter exited with {exc.code}\n")
         sys.stdout.flush()
         return False
-    except Exception as exc:
+    except (
+        LakeOntarioInterpreterError,
+        OSError,
+        ValueError,
+        TypeError,
+        ZeroDivisionError,
+        SyntaxError,
+        NameError,
+    ) as exc:
         sys.stdout.write(f"FAIL {script_name}: runtime error {exc}\n")
         sys.stdout.flush()
         return False
