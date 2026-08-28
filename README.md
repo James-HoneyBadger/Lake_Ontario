@@ -1,6 +1,6 @@
 # Lake Ontario BASIC
 
-**Lake Ontario BASIC** is a fully featured, practical, whimsical, and satirical programming language built in the spirit of classic BASIC — infused with Canadian politeness, progressive values, and a **fearless Honey Badger attitude** that takes zero shit from MAGA spin, GOP propaganda, or oligarch intimidation.
+**Lake Ontario BASIC** is a whimsical, and satirical programming language built in the spirit of classic BASIC — infused with politeness, progressive values, and a **fearless Honey Badger attitude** that takes zero shit from MAGA spin, GOP propaganda, or oligarch intimidation.
 
 In **Lake Ontario**, alternative facts don't compile, universal healthcare protects against runtime crashes, wealth is taxed gracefully into public infrastructure, workers unionize effortlessly, and Honey Badger mode shreds disinformation with zero fear.
 
