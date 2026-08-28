@@ -180,3 +180,15 @@ python3 run_ide.py
 ```
 
 When the GUI starts, you can edit a script, run it, view output, and watch graphics appear on the canvas. The GUI also supports `TOWN_HALL` prompts in an input dialog.
+
+## Documentation Suite
+
+A full documentation suite is available in the `docs/` folder:
+
+- `docs/getting_started.md`
+- `docs/language_reference.md`
+- `docs/gui_ide_guide.md`
+- `docs/examples_guide.md`
+- `docs/developer_manual.md`
+
+These files provide user guides, reference manuals, examples, and developer extension notes.
