@@ -18,6 +18,27 @@ To run a Lake Ontario BASIC script:
 python3 interpreter.py examples/hello.lo
 ```
 
+## Project environment bootstrap
+
+The project includes a self-bootstrapping launcher that creates a `.venv` if needed and verifies the Python environment before starting the GUI or interpreter.
+
+```bash
+python3 run_ide.py
+python3 interpreter.py --doctor
+```
+
+## Common CLI commands
+
+```bash
+python3 interpreter.py --help
+python3 interpreter.py --version
+python3 interpreter.py --list-examples
+python3 interpreter.py --run-example hello
+python3 interpreter.py --doctor
+python3 interpreter.py --repl
+python3 interpreter.py --check examples/hello.lo
+```
+
 ## Run the CLI IDE
 
 ```bash

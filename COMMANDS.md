@@ -159,10 +159,20 @@
   - Confirms approval from unionized beavers and open-source poets.
 - `ELECTORATE_PULSE(value)`
   - Reports a fun mock-stat poll percentage.
-- `COLLECTIVE_LIST(...)`
-  - Creates a list of values.
-- `MUTUAL_AID_REGISTRY(...)`
+- `COLLECTIVE_LIST value1, value2, ...`
+  - Creates a list of values, including the shorthand BASIC-style call form used in scripts.
+- `MUTUAL_AID_REGISTRY key = value, ...`
   - Creates a dictionary of named values.
+- `SORT_CITIZENS variable`
+  - Sorts a list-like variable in ascending order.
+- `AVERAGE_CITIZENS variable`
+  - Computes the numeric average of a list-like variable and stores it in `variable_average`.
+- `SHOW_VARS`
+  - Prints the active variable registry for debugging and live inspection.
+- `RESET_CITIZENS`
+  - Clears all stored variables and resets the live state.
+- `APPEND_TO variable, value`
+  - Appends a value to a list-like variable.
 
 ## Operator Aliases
 

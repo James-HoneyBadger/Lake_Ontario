@@ -141,6 +141,50 @@ Run any script using the interpreter:
 python3 interpreter.py examples/full_language_tour.lo
 ```
 
+### Self-bootstrapping environment
+
+The project will create a local `.venv` automatically when you launch the GUI wrapper, and it checks for the required Python environment and Tkinter support before running.
+
+```bash
+python3 run_ide.py
+python3 interpreter.py --doctor
+```
+
+### CLI quick reference
+
+```bash
+python3 interpreter.py --help
+python3 interpreter.py --version
+python3 interpreter.py --list-examples
+python3 interpreter.py --run-example hello
+python3 interpreter.py --doctor
+python3 interpreter.py --repl
+python3 interpreter.py --check examples/hello.lo
+```
+
+## 4a. Interactive REPL
+
+Try the live interpreter prompt for quick experiments:
+
+```bash
+python3 interpreter.py --repl
+```
+
+Example session:
+
+```text
+Lake Ontario BASIC REPL
+Type a statement and press Enter. Type IMPEACH or EXIT to quit.
+
+lo> BROADCAST_CBC "Hello from the REPL!"
+Hello from the REPL!
+lo> FACT_CHECK total = 3 EQUAL_PAY 4
+lo> BROADCAST_CBC total
+7
+lo> IMPEACH
+Goodbye from Lake Ontario BASIC.
+```
+
 ## 5. IDE and Command Reference
 
 A lightweight Lake Ontario BASIC IDE is available for interactive scripting.

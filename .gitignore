@@ -18,5 +18,10 @@ env/
 *.swo
 .vscode/
 
+# Build / packaging artifacts
+*.egg-info/
+dist/
+build/
+
 # Logs
 *.log

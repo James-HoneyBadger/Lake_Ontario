@@ -7,9 +7,17 @@ pro-diversity, pro-socialism, and anti-MAGA.
 """
 
 import math
+import os
 import re
 import sys
 import time
+
+try:
+    import tkinter
+except ImportError:  # pragma: no cover - dependency may be absent in headless envs
+    tkinter = None
+
+__version__ = "0.1.0"
 
 
 class LakeOntarioInterpreterError(Exception):
@@ -325,6 +333,42 @@ def electorate_pulse(value):
         return LOString("📊 ELECTORATE PULSE: Polling data is unavailable, eh.")
 
 
+def citizen_count(*values):
+    if len(values) == 1 and isinstance(values[0], (list, tuple, dict, set)):
+        return len(values[0])
+    return len(values)
+
+
+def collective_append(target, item):
+    if target is None:
+        return [item]
+    if isinstance(target, list):
+        target.append(item)
+        return target
+    if isinstance(target, tuple):
+        return list(target) + [item]
+    return [target, item]
+
+
+def sort_citizens(values):
+    if values is None:
+        return []
+    items = list(values)
+    return sorted(items, key=lambda v: float(v) if isinstance(v, (int, float)) else str(v))
+
+
+def average_citizens(values):
+    if values is None:
+        return 0.0
+    items = list(values)
+    if not items:
+        return 0.0
+    try:
+        return sum(float(v) for v in items) / len(items)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 class LakeOntarioInterpreter:
     def __init__(self):
         self.variables = {}
@@ -335,6 +379,11 @@ class LakeOntarioInterpreter:
         self.custom_builtins = {}
         self.input_callback = None
         self.graphics_callbacks = {}
+        self.current_line_number = None
+
+    def run_statement(self, statement):
+        self.load_script(statement)
+        self.run()
 
     def set_input_callback(self, callback):
         self.input_callback = callback
@@ -346,13 +395,13 @@ class LakeOntarioInterpreter:
         raw_lines = code_str.splitlines()
         self.lines = []
         self.line_map = {}
+        self.current_line_number = None
 
         for line in raw_lines:
             stripped = line.strip()
             if not stripped or stripped.startswith("EXCUSE_ME"):
                 continue
 
-            # Line number parsing
             match = re.match(r"^(\d+)\s+(.*)$", stripped)
             if match:
                 line_num = int(match.group(1))
@@ -367,12 +416,17 @@ class LakeOntarioInterpreter:
         if not expr:
             return None
 
-        # Replace keywords, literals and custom operators
+        expr = re.sub(r"\bCOLLECTIVE_LIST\s+(.+)", r"COLLECTIVE_LIST(\1)", expr)
+        expr = re.sub(
+            r"\bMUTUAL_AID_REGISTRY\s+(.+)",
+            r"MUTUAL_AID_REGISTRY(\1)",
+            expr,
+        )
+
         expr = re.sub(r"\bEVIDENCE_BASED\b", "True", expr)
         expr = re.sub(r"\bALTERNATIVE_FACT\b", "False", expr)
         expr = re.sub(r"\bCLASSIFIED_MAR_A_LAGO\b", "None", expr)
 
-        # Custom operators mapped to Python operators
         expr = re.sub(r"\bWEALTH_TAX\b", "-", expr)
         expr = re.sub(r"\bEQUAL_PAY\b", "+", expr)
         expr = re.sub(r"\bPROPORTIONAL_SHARE\b", "/", expr)
@@ -381,7 +435,6 @@ class LakeOntarioInterpreter:
         expr = re.sub(r"\bMAPLE_SYRUP\b", "%", expr)
         expr = re.sub(r"\bMOONSHOT\b", "**", expr)
 
-        # Preserve string literals during variable replacement
         literals = []
 
         def save_literal(m):
@@ -390,7 +443,6 @@ class LakeOntarioInterpreter:
 
         processed = re.sub(r'(["\'])(?:(?=(\\?))\2.)*?\1', save_literal, expr)
 
-        # Built-in symbol whitelist
         builtins = {
             "True": True,
             "False": False,
@@ -432,6 +484,10 @@ class LakeOntarioInterpreter:
             "LOONIE_LOOP": loonie_loop,
             "SOCIAL_LICENSE": social_license,
             "ELECTORATE_PULSE": electorate_pulse,
+            "CITIZEN_COUNT": citizen_count,
+            "COLLECTIVE_APPEND": collective_append,
+            "SORT_CITIZENS": sort_citizens,
+            "AVERAGE_CITIZENS": average_citizens,
             "COLLECTIVE_LIST": lambda *args: list(args),
             "MUTUAL_AID_REGISTRY": lambda **kwargs: dict(kwargs),
         }
@@ -449,7 +505,6 @@ class LakeOntarioInterpreter:
 
         eval_safe = re.sub(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", var_replacer, processed)
 
-        # Restore string literals wrapped as LOString objects for overloaded + operator
         for idx, lit in enumerate(literals):
             clean_str = repr(lit[1:-1])
             eval_safe = eval_safe.replace(f"__STR_{idx}__", f"LOString({clean_str})")
@@ -472,22 +527,20 @@ class LakeOntarioInterpreter:
         loop_stack = []
 
         while self.pc < len(self.lines):
-            _, stmt = self.lines[self.pc]
+            line_number, stmt = self.lines[self.pc]
+            self.current_line_number = line_number
             self.pc += 1
 
             if stmt.startswith("EXCUSE_ME"):
                 continue
 
             try:
-                # LAND_ACKNOWLEDGEMENT header
                 if stmt.startswith("LAND_ACKNOWLEDGEMENT "):
                     land_name = self.evaluate_expression(stmt[21:].strip())
                     print(
                         "🍁 LAND ACKNOWLEDGEMENT: Respectfully acknowledging "
                         f"traditional territory of {land_name}. 🍁"
                     )
-
-                # HONEY_BADGER_MODE statement
                 elif stmt == "HONEY_BADGER_MODE":
                     print(
                         "🦡 HONEY BADGER MODE ENGAGED: Fearless execution activated! "
@@ -500,54 +553,34 @@ class LakeOntarioInterpreter:
                         f"🦡 HONEY BADGER DOESN'T GIVE A SHIT ABOUT: '{target}'! "
                         "Moving forward with 100% fearlessness! ⚡"
                     )
-
-                # BADGER_BITE statement
                 elif stmt.startswith("BADGER_BITE "):
                     target = self.evaluate_expression(stmt[12:].strip())
                     print(f"💥 BADGER BITE: {target} 💥")
-
-                # FAT_CATS_TAX statement
                 elif stmt.startswith("FAT_CATS_TAX "):
                     amount = self.evaluate_expression(stmt[13:].strip())
                     print(fat_cats_tax(amount))
-
-                # DONUT_DIVIDEND statement
                 elif stmt.startswith("DONUT_DIVIDEND "):
                     amount = self.evaluate_expression(stmt[15:].strip())
                     print(donut_dividend(amount))
-
-                # NATIONAL_STOOGE statement
                 elif stmt.startswith("NATIONAL_STOOGE "):
                     msg = self.evaluate_expression(stmt[14:].strip())
                     print(national_stooge(msg))
-
-                # GREEN_NEW_DEAL statement
                 elif stmt.startswith("GREEN_NEW_DEAL "):
                     goal = self.evaluate_expression(stmt[15:].strip())
                     print(green_new_deal(goal))
-
-                # RHETORICAL_QUESTION statement
                 elif stmt.startswith("RHETORICAL_QUESTION "):
                     question = self.evaluate_expression(stmt[19:].strip())
                     print(rhetorical_question(question))
-
-                # LOONIE_LOOP statement
                 elif stmt.startswith("LOONIE_LOOP "):
                     count = self.evaluate_expression(stmt[12:].strip())
                     result = loonie_loop(count)
                     print(result)
-
-                # SOCIAL_LICENSE statement
                 elif stmt.startswith("SOCIAL_LICENSE "):
                     license_name = self.evaluate_expression(stmt[15:].strip())
                     print(social_license(license_name))
-
-                # ELECTORATE_PULSE statement
                 elif stmt.startswith("ELECTORATE_PULSE "):
                     pulse = self.evaluate_expression(stmt[16:].strip())
                     print(electorate_pulse(pulse))
-
-                # NATIONAL_HEALTHCARE alias for UNIVERSAL_HEALTHCARE
                 elif stmt == "NATIONAL_HEALTHCARE":
                     in_healthcare = True
                     print(
@@ -561,14 +594,10 @@ class LakeOntarioInterpreter:
                         self.variables[var_name.strip()] = self.evaluate_expression(
                             val_expr
                         )
-
-                # BROADCAST_CBC print statement
                 elif stmt.startswith("BROADCAST_CBC "):
                     val_expr = stmt[14:].strip()
                     val = self.evaluate_expression(val_expr)
                     print(val)
-
-                # TOWN_HALL input statement
                 elif stmt.startswith("TOWN_HALL "):
                     var_name = stmt[10:].strip()
                     if self.input_callback:
@@ -579,41 +608,63 @@ class LakeOntarioInterpreter:
                         self.variables[var_name] = int(user_val)
                     except ValueError:
                         self.variables[var_name] = user_val
-
-                # INPUT_BOX statement for GUI text input dialogs
                 elif stmt.startswith("INPUT_BOX "):
                     var_name = stmt[10:].strip()
                     if self.input_callback:
-                        user_val = self.input_callback(
-                            var_name, prompt_type="input_box"
-                        )
+                        user_val = self.input_callback(var_name, prompt_type="input_box")
                     else:
                         user_val = input(f"🖥️ Input Box for {var_name}: ")
                     try:
                         self.variables[var_name] = int(user_val)
                     except ValueError:
                         self.variables[var_name] = user_val
-
-                # SET_PEN_COLOR and SET_FILL_COLOR statements
+                elif stmt == "SHOW_VARS":
+                    if not self.variables:
+                        print("📋 CITIZEN REGISTER: empty, like a quiet town hall.")
+                    else:
+                        print("📋 CITIZEN REGISTER:")
+                        for name, value in self.variables.items():
+                            print(f"  {name} = {value}")
+                elif stmt == "RESET_CITIZENS":
+                    self.variables.clear()
+                    print("🧹 CITIZEN REGISTER RESET: all values cleared, democracy restored to baseline.")
+                elif stmt.startswith("APPEND_TO "):
+                    body = stmt[10:].strip()
+                    target_name, item_expr = body.split(",", 1)
+                    target_name = target_name.strip()
+                    item_value = self.evaluate_expression(item_expr.strip())
+                    if target_name not in self.variables:
+                        self.variables[target_name] = []
+                    if not isinstance(self.variables[target_name], list):
+                        self.variables[target_name] = [self.variables[target_name]]
+                    self.variables[target_name].append(item_value)
+                    print(f"📎 Appended to {target_name}: {item_value}")
+                elif stmt.startswith("SORT_CITIZENS "):
+                    var_name = stmt[14:].strip()
+                    if var_name in self.variables:
+                        self.variables[var_name] = sort_citizens(self.variables[var_name])
+                        print(f"📊 Sorted {var_name}: {self.variables[var_name]}")
+                elif stmt.startswith("AVERAGE_CITIZENS "):
+                    var_name = stmt[17:].strip()
+                    if var_name in self.variables:
+                        avg = average_citizens(self.variables[var_name])
+                        self.variables[f"{var_name}_average"] = avg
+                        print(f"📈 Average of {var_name}: {avg}")
                 elif stmt.startswith("SET_PEN_COLOR "):
                     color_value = self.evaluate_expression(stmt[14:].strip())
                     callback = self.graphics_callbacks.get("pen_color")
                     if callback:
                         callback(color_value)
-
                 elif stmt.startswith("SET_FILL_COLOR "):
                     color_value = self.evaluate_expression(stmt[15:].strip())
                     callback = self.graphics_callbacks.get("fill_color")
                     if callback:
                         callback(color_value)
-
                 elif stmt.startswith("SET_CANVAS_BG "):
                     bg_value = self.evaluate_expression(stmt[14:].strip())
                     callback = self.graphics_callbacks.get("canvas_bg")
                     if callback:
                         callback(bg_value)
-
-                # FILL_RECTANGLE statement
                 elif stmt.startswith("FILL_RECTANGLE "):
                     args = [arg.strip() for arg in stmt[15:].split(",")]
                     if len(args) == 4:
@@ -624,8 +675,6 @@ class LakeOntarioInterpreter:
                         callback = self.graphics_callbacks.get("filled_rectangle")
                         if callback:
                             callback(x, y, width, height)
-
-                # FILL_CIRCLE statement
                 elif stmt.startswith("FILL_CIRCLE "):
                     args = [arg.strip() for arg in stmt[12:].split(",")]
                     if len(args) == 3:
@@ -635,12 +684,9 @@ class LakeOntarioInterpreter:
                         callback = self.graphics_callbacks.get("filled_circle")
                         if callback:
                             callback(x, y, radius)
-
                 elif stmt.startswith("WAIT "):
                     delay = float(self.evaluate_expression(stmt[5:].strip()))
                     time.sleep(min(max(delay / 1000.0, 0.0), 5.0))
-
-                # PUBLISH_RESEARCH_FILE statement
                 elif stmt.startswith("PUBLISH_RESEARCH_FILE "):
                     body = stmt[22:].strip()
                     path_expr, content_expr = body.split(",", 1)
@@ -648,13 +694,10 @@ class LakeOntarioInterpreter:
                     content = self.evaluate_expression(content_expr)
                     publish_research(path, content)
                     print(f"📄 Published research document to {path}")
-
-                # Graphics and GUI drawing statements
                 elif stmt == "CLEAR_GRAPHICS":
                     callback = self.graphics_callbacks.get("clear")
                     if callback:
                         callback()
-
                 elif stmt.startswith("DRAW_LINE "):
                     args = [arg.strip() for arg in stmt[10:].split(",")]
                     if len(args) == 4:
@@ -665,7 +708,6 @@ class LakeOntarioInterpreter:
                         callback = self.graphics_callbacks.get("line")
                         if callback:
                             callback(x1, y1, x2, y2)
-
                 elif stmt.startswith("DRAW_RECTANGLE "):
                     args = [arg.strip() for arg in stmt[15:].split(",")]
                     if len(args) == 4:
@@ -676,7 +718,6 @@ class LakeOntarioInterpreter:
                         callback = self.graphics_callbacks.get("rectangle")
                         if callback:
                             callback(x, y, width, height)
-
                 elif stmt.startswith("DRAW_CIRCLE "):
                     args = [arg.strip() for arg in stmt[12:].split(",")]
                     if len(args) == 3:
@@ -686,7 +727,6 @@ class LakeOntarioInterpreter:
                         callback = self.graphics_callbacks.get("circle")
                         if callback:
                             callback(x, y, radius)
-
                 elif stmt.startswith("DRAW_TEXT "):
                     args = [arg.strip() for arg in stmt[10:].split(",", 2)]
                     if len(args) == 3:
@@ -696,17 +736,12 @@ class LakeOntarioInterpreter:
                         callback = self.graphics_callbacks.get("text")
                         if callback:
                             callback(x, y, text)
-
-                # PERHAPS ... FACT_ESTABLISHED conditional
                 elif stmt.startswith("PERHAPS "):
                     condition_part = stmt[8:]
                     if " FACT_ESTABLISHED" in condition_part:
-                        cond_expr = condition_part.replace(
-                            " FACT_ESTABLISHED", ""
-                        ).strip()
+                        cond_expr = condition_part.replace(" FACT_ESTABLISHED", "").strip()
                     else:
                         cond_expr = condition_part.strip()
-
                     res = self.evaluate_expression(cond_expr)
                     if not res:
                         depth = 1
@@ -723,7 +758,6 @@ class LakeOntarioInterpreter:
                                 self.pc += 1
                                 break
                             self.pc += 1
-
                 elif stmt == "STILL_IN_DENIAL":
                     depth = 1
                     while self.pc < len(self.lines) and depth > 0:
@@ -733,21 +767,15 @@ class LakeOntarioInterpreter:
                         elif sub_stmt == "END_PERHAPS":
                             depth -= 1
                         self.pc += 1
-
                 elif stmt == "END_PERHAPS":
                     pass
-
-                # WHILE_CLASS_CONSCIOUS loop
                 elif stmt.startswith("WHILE_CLASS_CONSCIOUS "):
                     cond_expr = stmt[22:].strip()
                     start_pc = self.pc - 1
                     res = self.evaluate_expression(cond_expr)
                     if res:
-                        loop_stack.append(
-                            {"type": "while", "cond": cond_expr, "start_pc": start_pc}
-                        )
+                        loop_stack.append({"type": "while", "cond": cond_expr, "start_pc": start_pc})
                     else:
-                        # Skip to CONTINUE_ORGANIZING
                         depth = 1
                         while self.pc < len(self.lines) and depth > 0:
                             _, sub_stmt = self.lines[self.pc]
@@ -759,7 +787,6 @@ class LakeOntarioInterpreter:
                                     self.pc += 1
                                     break
                             self.pc += 1
-
                 elif stmt == "CONTINUE_ORGANIZING":
                     if loop_stack and loop_stack[-1]["type"] == "while":
                         top = loop_stack[-1]
@@ -768,40 +795,29 @@ class LakeOntarioInterpreter:
                             self.pc = top["start_pc"] + 1
                         else:
                             loop_stack.pop()
-
-                # UNIVERSAL_HEALTHCARE exception safety block
                 elif stmt == "UNIVERSAL_HEALTHCARE":
                     in_healthcare = True
-
                 elif stmt == "EXECUTIVE_ORDER_BLOCKED":
                     in_healthcare = False
-
-                # COAST_TO_COAST for loop (COAST_TO_COAST i = start UP_TO end
-                # [STEP step])
                 elif stmt.startswith("COAST_TO_COAST "):
                     loop_def = stmt[15:].strip()
                     step_val = 1
                     if " STEP " in loop_def:
                         loop_def, step_expr = loop_def.split(" STEP ")
                         step_val = self.evaluate_expression(step_expr)
-
                     var_part, range_part = loop_def.split(" UP_TO ")
                     var_name, start_expr = var_part.split("=")
                     var_name = var_name.strip()
                     start_val = self.evaluate_expression(start_expr)
                     end_val = self.evaluate_expression(range_part)
-
                     self.variables[var_name] = start_val
-                    loop_stack.append(
-                        {
-                            "type": "for",
-                            "var": var_name,
-                            "end": end_val,
-                            "step": step_val,
-                            "start_pc": self.pc,
-                        }
-                    )
-
+                    loop_stack.append({
+                        "type": "for",
+                        "var": var_name,
+                        "end": end_val,
+                        "step": step_val,
+                        "start_pc": self.pc,
+                    })
                 elif stmt == "THANK_YOU_EH":
                     if loop_stack and loop_stack[-1]["type"] == "for":
                         top = loop_stack[-1]
@@ -813,8 +829,6 @@ class LakeOntarioInterpreter:
                             self.pc = top["start_pc"]
                         else:
                             loop_stack.pop()
-
-                # SUBPOENA subroutine call
                 elif stmt.startswith("SUBPOENA "):
                     target = int(stmt[9:].strip())
                     if target in self.line_map:
@@ -822,32 +836,23 @@ class LakeOntarioInterpreter:
                         self.pc = self.line_map[target]
                     else:
                         print(f"Subpoena Error: Line {target} ignored subpoena!")
-
-                # RETURN_TO_OTTAWA return from subroutine
                 elif stmt == "RETURN_TO_OTTAWA":
                     if self.call_stack:
                         self.pc = self.call_stack.pop()
                     else:
                         print("Error: RETURN_TO_OTTAWA with empty call stack, eh!")
-
-                # GOLF_VACATION pause execution
                 elif stmt.startswith("GOLF_VACATION "):
                     sec = float(self.evaluate_expression(stmt[14:].strip()))
                     print(f"⛳ Executive on Golf Vacation for {sec} seconds...")
                     time.sleep(min(sec, 2.0))
-
-                # CLIMATE_EMERGENCY exception raise
                 elif stmt.startswith("CLIMATE_EMERGENCY "):
                     msg = self.evaluate_expression(stmt[18:].strip())
                     raise LakeOntarioInterpreterError(
-                        f"CLIMATE EMERGENCY RAISED: {msg}"
+                        f"Line {self.current_line_number}: CLIMATE EMERGENCY RAISED: {msg}"
                     )
-
-                # IMPEACH terminate program
                 elif stmt == "IMPEACH":
                     print("🏛️ IMPEACHMENT EFFECTIVE: Program terminated cleanly.")
                     break
-
             except (
                 LakeOntarioInterpreterError,
                 OSError,
@@ -865,17 +870,263 @@ class LakeOntarioInterpreter:
                             break
                         self.pc += 1
                 else:
-                    print(f"🚨 UNHANDLED DISASTER: {e}")
+                    line_tag = (
+                        f"Line {self.current_line_number}: "
+                        if self.current_line_number is not None
+                        else ""
+                    )
+                    print(f"🚨 UNHANDLED DISASTER: {line_tag}{e}")
                     sys.exit(1)
 
 
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: python3 interpreter.py <script.lo>")
+def validate_script(code):
+    errors = []
+    for raw_line in code.splitlines():
+        stripped = raw_line.strip()
+        if not stripped or stripped.startswith("EXCUSE_ME"):
+            continue
+
+        match = re.match(r"^(\d+)\s+(.*)$", stripped)
+        if match:
+            line_number = int(match.group(1))
+            stmt = match.group(2).strip()
+        else:
+            line_number = None
+            stmt = stripped
+
+        if stmt.startswith("FACT_CHECK"):
+            if "=" not in stmt:
+                label = f"Line {line_number}" if line_number is not None else "Line ?"
+                errors.append(f"{label}: FACT_CHECK statement must include '='")
+            else:
+                _, rhs = stmt.split("=", 1)
+                if not rhs.strip():
+                    label = f"Line {line_number}" if line_number is not None else "Line ?"
+                    errors.append(
+                        f"{label}: FACT_CHECK assignment is missing a value"
+                    )
+        elif stmt.startswith("COAST_TO_COAST") and " UP_TO " not in stmt:
+            label = f"Line {line_number}" if line_number is not None else "Line ?"
+            errors.append(
+                f"{label}: COAST_TO_COAST statement must include 'UP_TO'"
+            )
+        elif stmt.startswith("PUBLISH_RESEARCH_FILE") and "," not in stmt:
+            label = f"Line {line_number}" if line_number is not None else "Line ?"
+            errors.append(
+                f"{label}: PUBLISH_RESEARCH_FILE must separate path and content with a comma"
+            )
+        elif stmt.startswith("SUBPOENA"):
+            target_text = stmt[9:].strip()
+            if not target_text.isdigit():
+                label = f"Line {line_number}" if line_number is not None else "Line ?"
+                errors.append(f"{label}: SUBPOENA must target a numbered line")
+        elif stmt.startswith("GOLF_VACATION"):
+            value = stmt[14:].strip()
+            try:
+                float(value)
+            except ValueError:
+                label = f"Line {line_number}" if line_number is not None else "Line ?"
+                errors.append(f"{label}: GOLF_VACATION requires a numeric value")
+        elif stmt.startswith("CLIMATE_EMERGENCY"):
+            if not stmt[18:].strip():
+                label = f"Line {line_number}" if line_number is not None else "Line ?"
+                errors.append(f"{label}: CLIMATE_EMERGENCY requires a message")
+        elif stmt.startswith("TOWN_HALL") and not stmt[10:].strip():
+            label = f"Line {line_number}" if line_number is not None else "Line ?"
+            errors.append(f"{label}: TOWN_HALL requires a variable name")
+        elif stmt.startswith("INPUT_BOX") and not stmt[10:].strip():
+            label = f"Line {line_number}" if line_number is not None else "Line ?"
+            errors.append(f"{label}: INPUT_BOX requires a variable name")
+
+    return errors
+
+
+def run_repl():
+    interpreter = LakeOntarioInterpreter()
+    print("Lake Ontario BASIC REPL")
+    print("Type a statement and press Enter. Type IMPEACH or EXIT to quit.\n")
+    while True:
+        try:
+            statement = input("lo> ")
+        except EOFError:
+            print()
+            break
+        except KeyboardInterrupt:
+            print("\nGoodbye from Lake Ontario BASIC.")
+            break
+
+        statement = statement.strip()
+        if not statement:
+            continue
+        if statement.upper() in {"IMPEACH", "EXIT", "QUIT"}:
+            print("Goodbye from Lake Ontario BASIC.")
+            break
+
+        try:
+            interpreter.load_script(statement)
+            interpreter.run()
+        except SystemExit:
+            break
+        except (LakeOntarioInterpreterError, OSError, ValueError, TypeError,
+                ZeroDivisionError, SyntaxError, NameError) as exc:
+            print(f"🚨 REPL ERROR: {exc}")
+
+
+def list_example_scripts():
+    examples_dir = os.path.join(os.path.dirname(__file__), "examples")
+    if not os.path.isdir(examples_dir):
+        print("No example scripts found.")
+        return
+
+    files = sorted(
+        entry.name
+        for entry in os.scandir(examples_dir)
+        if entry.is_file() and entry.name.endswith(".lo")
+    )
+    if not files:
+        print("No example scripts found.")
+        return
+
+    print("Available Lake Ontario BASIC example scripts:")
+    for name in files:
+        print(f"  - {name}")
+
+
+def run_example_script(example_name):
+    examples_dir = os.path.join(os.path.dirname(__file__), "examples")
+    candidate = example_name
+    if not candidate.endswith(".lo"):
+        candidate = f"{candidate}.lo"
+    script_path = os.path.join(examples_dir, candidate)
+
+    if not os.path.isfile(script_path):
+        print(f"Example script not found: {example_name}")
         sys.exit(1)
 
-    with open(sys.argv[1], "r", encoding="utf-8") as f:
+    with open(script_path, "r", encoding="utf-8") as f:
         code = f.read()
+
+    errors = validate_script(code)
+    if errors:
+        for error in errors:
+            print(error)
+        sys.exit(1)
+
+    interpreter = LakeOntarioInterpreter()
+    interpreter.load_script(code)
+    interpreter.run()
+
+
+def print_usage():
+    print("Usage: python3 interpreter.py [--repl | -i] [--check script.lo] [--list-examples] [--run-example example.lo] [--doctor] [--version] [script.lo]")
+    print()
+    print("Examples:")
+    print("  python3 interpreter.py examples/hello.lo")
+    print("  python3 interpreter.py --repl")
+    print("  python3 interpreter.py --check examples/hello.lo")
+    print("  python3 interpreter.py --list-examples")
+    print("  python3 interpreter.py --run-example hello")
+    print("  python3 interpreter.py --doctor")
+    print("  python3 interpreter.py --version")
+    print("  python3 interpreter.py -i")
+    print()
+    print("The interpreter reads Lake Ontario BASIC scripts and supports an")
+    print("interactive REPL for quick experimentation.")
+
+
+def run_environment_doctor():
+    python_version = sys.version.split()[0]
+    venv_mode = "yes" if sys.prefix != sys.base_prefix or "VIRTUAL_ENV" in os.environ else "no"
+    tkinter_status = "ok" if tkinter is not None else "missing"
+    project_root = os.path.dirname(os.path.abspath(__file__))
+
+    example_count = 0
+    examples_dir = os.path.join(project_root, "examples")
+    try:
+        example_count = len(
+            [
+                name for name in os.listdir(examples_dir)
+                if name.endswith(".lo")
+            ]
+        )
+    except OSError:
+        example_count = 0
+
+    print(f"Python: {python_version}")
+    print(f"Virtual environment: {venv_mode}")
+    print(f"Tkinter: {tkinter_status}")
+    print(f"Example scripts: {example_count}")
+
+    if tkinter is None:
+        print("Environment check failed: tkinter is missing. Install python3-tk or use the project venv.")
+        sys.exit(1)
+
+    print("Environment OK")
+
+
+def main():
+    if len(sys.argv) == 1:
+        run_repl()
+        return
+
+    if sys.argv[1] in {"-h", "--help", "help"}:
+        print_usage()
+        return
+
+    if sys.argv[1] in {"--version", "-V"}:
+        print(f"Lake Ontario BASIC {__version__}")
+        return
+
+    if sys.argv[1] == "--doctor":
+        run_environment_doctor()
+        return
+
+    if sys.argv[1] == "--list-examples":
+        if len(sys.argv) != 2:
+            print_usage()
+            sys.exit(1)
+        list_example_scripts()
+        return
+
+    if sys.argv[1] == "--run-example":
+        if len(sys.argv) != 3:
+            print_usage()
+            sys.exit(1)
+        run_example_script(sys.argv[2])
+        return
+
+    if sys.argv[1] in {"--repl", "-i"}:
+        run_repl()
+        return
+
+    if sys.argv[1] == "--check":
+        if len(sys.argv) != 3:
+            print_usage()
+            sys.exit(1)
+        script_path = sys.argv[2]
+        with open(script_path, "r", encoding="utf-8") as f:
+            code = f.read()
+        errors = validate_script(code)
+        if errors:
+            for error in errors:
+                print(error)
+            sys.exit(1)
+        print(f"Validation passed for {script_path}")
+        return
+
+    if len(sys.argv) != 2:
+        print_usage()
+        sys.exit(1)
+
+    script_path = sys.argv[1]
+    with open(script_path, "r", encoding="utf-8") as f:
+        code = f.read()
+
+    errors = validate_script(code)
+    if errors:
+        for error in errors:
+            print(error)
+        sys.exit(1)
 
     interpreter = LakeOntarioInterpreter()
     interpreter.load_script(code)
