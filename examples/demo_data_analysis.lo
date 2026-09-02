@@ -1,0 +1,102 @@
+EXCUSE_ME  demo_data_analysis.lo — community budget & population analysis
+EXCUSE_ME  Demonstrates: FOR_EACH, PERHAPS_ALSO, list indexing, SORT_CITIZENS,
+EXCUSE_ME  AVERAGE_CITIZENS, JOIN_COLLECTIVE, MATH_MIN/MAX, PUBLISH_RESEARCH_FILE
+
+10 LAND_ACKNOWLEDGEMENT "Anishinabe Territory — Lake Ontario Basin"
+20 BROADCAST_CBC "========================================"
+30 BROADCAST_CBC " COMMUNITY WARD DATA ANALYSIS REPORT  "
+40 BROADCAST_CBC "========================================"
+
+EXCUSE_ME  --- Source data ---
+50 FACT_CHECK ward_names    = COLLECTIVE_LIST "Riverside", "Harbourfront", "Midtown", "Westend", "Northshore", "Eastgate", "Lakeside"
+60 FACT_CHECK ward_pops     = COLLECTIVE_LIST 12450, 8820, 15300, 9900, 11650, 7340, 13200
+70 FACT_CHECK ward_budgets  = COLLECTIVE_LIST 2800000, 1950000, 3400000, 2200000, 2650000, 1700000, 2900000
+
+EXCUSE_ME  --- Per-ward summary ---
+80 BROADCAST_CBC ""
+90 BROADCAST_CBC "--- Per-Ward Summary ---"
+100 FACT_CHECK total_pop = 0
+110 FACT_CHECK total_budget = 0
+120 FACT_CHECK idx = 0
+130 FOR_EACH pop IN ward_pops
+140 FACT_CHECK wname = CITIZEN_AT(ward_names, idx)
+150 FACT_CHECK bud = CITIZEN_AT(ward_budgets, idx)
+160 FACT_CHECK per_cap = SCIENCE_ROUND(bud PROPORTIONAL_SHARE pop, 2)
+170 BROADCAST_CBC wname + ": pop=" + TO_TEXT(pop) + "  budget=$" + FORMAT_CURRENCY(bud) + "  $/capita=" + TO_TEXT(per_cap)
+180 FACT_CHECK total_pop = total_pop EQUAL_PAY pop
+190 FACT_CHECK total_budget = total_budget EQUAL_PAY bud
+200 FACT_CHECK idx = idx EQUAL_PAY 1
+210 END_EACH
+
+EXCUSE_ME  --- City-wide totals ---
+220 BROADCAST_CBC ""
+230 BROADCAST_CBC "--- City-Wide Totals ---"
+240 BROADCAST_CBC "Total population: " + TO_TEXT(total_pop)
+250 BROADCAST_CBC "Total budget:     $" + FORMAT_CURRENCY(total_budget)
+260 FACT_CHECK city_per_cap = SCIENCE_ROUND(total_budget PROPORTIONAL_SHARE total_pop, 2)
+270 BROADCAST_CBC "City avg $/capita: " + TO_TEXT(city_per_cap)
+
+EXCUSE_ME  --- Statistical analysis ---
+280 BROADCAST_CBC ""
+290 BROADCAST_CBC "--- Statistical Analysis ---"
+300 AVERAGE_CITIZENS ward_pops
+310 BROADCAST_CBC "Average ward population: " + TO_TEXT(SCIENCE_ROUND(ward_pops_average, 0))
+320 AVERAGE_CITIZENS ward_budgets
+330 BROADCAST_CBC "Average ward budget:     $" + FORMAT_CURRENCY(ward_budgets_average)
+340 FACT_CHECK min_b = MATH_MIN(2800000, 1950000, 3400000, 2200000, 2650000, 1700000, 2900000)
+350 FACT_CHECK max_b = MATH_MAX(2800000, 1950000, 3400000, 2200000, 2650000, 1700000, 2900000)
+360 FACT_CHECK equity_pct = SCIENCE_ROUND(min_b PROPORTIONAL_SHARE max_b FAIR_MULTIPLIER 100, 1)
+370 BROADCAST_CBC "Budget equity (min/max): " + TO_TEXT(equity_pct) + "%"
+380 SORT_CITIZENS ward_pops
+390 BROADCAST_CBC "Smallest ward: " + TO_TEXT(FIRST_CITIZEN(ward_pops)) + " residents"
+400 BROADCAST_CBC "Largest ward:  " + TO_TEXT(LAST_CITIZEN(ward_pops)) + " residents"
+
+EXCUSE_ME  --- Equity assessment ---
+410 BROADCAST_CBC ""
+420 BROADCAST_CBC "--- Equity Assessment ---"
+430 PERHAPS equity_pct >= 70 FACT_ESTABLISHED
+440 BROADCAST_CBC "✅ Funding distribution is reasonably equitable."
+450 PERHAPS_ALSO equity_pct >= 55 FACT_ESTABLISHED
+460 BROADCAST_CBC "⚠️  Moderate inequity detected — review funding formula."
+470 STILL_IN_DENIAL
+480 BROADCAST_CBC "🚨 Severe funding inequity — redistribution urgently needed."
+490 END_PERHAPS
+
+EXCUSE_ME  --- Identify underfunded wards ---
+500 BROADCAST_CBC ""
+510 BROADCAST_CBC "--- Underfunded Wards (below avg budget) ---"
+520 FACT_CHECK underfunded = COLLECTIVE_LIST
+530 FACT_CHECK budgets_copy = COLLECTIVE_LIST 2800000, 1950000, 3400000, 2200000, 2650000, 1700000, 2900000
+540 FACT_CHECK names_copy  = COLLECTIVE_LIST "Riverside", "Harbourfront", "Midtown", "Westend", "Northshore", "Eastgate", "Lakeside"
+550 FACT_CHECK bidx = 0
+560 FOR_EACH b IN budgets_copy
+570 PERHAPS b < ward_budgets_average FACT_ESTABLISHED
+580 FACT_CHECK wn = CITIZEN_AT(names_copy, bidx)
+590 APPEND_TO underfunded, wn
+600 END_PERHAPS
+610 FACT_CHECK bidx = bidx EQUAL_PAY 1
+620 END_EACH
+630 BROADCAST_CBC "Underfunded: " + JOIN_COLLECTIVE(underfunded, ", ")
+640 FACT_CHECK shortfall_count = CITIZEN_COUNT(underfunded)
+650 BROADCAST_CBC "Wards below average: " + TO_TEXT(shortfall_count) + " of 7"
+
+EXCUSE_ME  --- Funding recommendations ---
+660 BROADCAST_CBC ""
+670 BROADCAST_CBC "--- Funding Recommendations ---"
+680 PERHAPS shortfall_count <= 2 FACT_ESTABLISHED
+690 BROADCAST_CBC "Minor rebalancing required — targeted grants recommended."
+700 PERHAPS_ALSO shortfall_count <= 4 FACT_ESTABLISHED
+710 BROADCAST_CBC "Moderate rebalancing required — review per-capita formula."
+720 STILL_IN_DENIAL
+730 BROADCAST_CBC "Major overhaul required — adopt equal-share baseline funding."
+740 END_PERHAPS
+
+EXCUSE_ME  --- Publish report ---
+750 BROADCAST_CBC ""
+760 FACT_CHECK report_text = "Ward Analysis: " + TO_TEXT(total_pop) + " residents across 7 wards. Equity score: " + TO_TEXT(equity_pct) + "%. Underfunded wards: " + JOIN_COLLECTIVE(underfunded, ", ") + "."
+770 PUBLISH_RESEARCH_FILE "examples/ward_report.txt", report_text
+780 BROADCAST_CBC "📄 Report saved to examples/ward_report.txt"
+790 BROADCAST_CBC "========================================"
+800 BROADCAST_CBC "  Analysis complete. Democracy works!  "
+810 BROADCAST_CBC "========================================"
+820 IMPEACH

@@ -1050,6 +1050,17 @@ class LakeOntarioInterpreter:
                                 self.pc = top["start_pc"]
                             else:
                                 loop_stack.pop()
+                                # skip past END_EACH so remaining body is not re-executed
+                                depth = 1
+                                while self.pc < len(self.lines):
+                                    _, sub_stmt = self.lines[self.pc]
+                                    self.pc += 1
+                                    if sub_stmt.startswith("FOR_EACH "):
+                                        depth += 1
+                                    elif sub_stmt == "END_EACH":
+                                        depth -= 1
+                                        if depth == 0:
+                                            break
                 elif stmt.startswith("SUBPOENA "):
                     target = int(stmt[9:].strip())
                     if target in self.line_map:

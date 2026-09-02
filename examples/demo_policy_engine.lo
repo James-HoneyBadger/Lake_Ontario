@@ -1,0 +1,152 @@
+EXCUSE_ME  demo_policy_engine.lo - multi-branch policy scoring engine
+EXCUSE_ME  Demonstrates: HONEY_BADGER_MODE, PERHAPS_ALSO chains, subroutines,
+EXCUSE_ME  WHILE loop, RANDOM_DEMOCRACY, satirical built-ins, UNIVERSAL_HEALTHCARE,
+EXCUSE_ME  PUBLISH_RESEARCH_FILE
+
+10 LAND_ACKNOWLEDGEMENT "Traditional Territory of the Dish With One Spoon Covenant"
+20 HONEY_BADGER_MODE
+30 HONEY_BADGER_DONT_CARE "Corporate lobbyists, think-tank spin, and alternative facts"
+40 BROADCAST_CBC ""
+50 BROADCAST_CBC "===================================="
+60 BROADCAST_CBC "  PROGRESSIVE POLICY SCORING ENGINE "
+70 BROADCAST_CBC "===================================="
+80 FACT_CHECK platform_name = "New Progressive Alliance"
+90 FACT_CHECK ubi_monthly = 1800
+100 FACT_CHECK dental_included = EVIDENCE_BASED
+110 FACT_CHECK carbon_per_tonne = 85
+120 FACT_CHECK new_housing_units = 200000
+130 FACT_CHECK total_score = 0
+140 FACT_CHECK max_possible = 0
+150 BROADCAST_CBC ""
+160 BROADCAST_CBC "--- Scoring: " + platform_name + " ---"
+170 FACT_CHECK plank_label = "Universal Basic Income"
+180 FACT_CHECK plank_input = ubi_monthly
+190 SUBPOENA 2000
+200 BROADCAST_CBC "  [" + TO_TEXT(plank_score) + "/25] " + plank_label
+210 FACT_CHECK plank_label = "Universal Dental Coverage"
+220 FACT_CHECK plank_flag = dental_included
+230 SUBPOENA 2100
+240 BROADCAST_CBC "  [" + TO_TEXT(plank_score) + "/25] " + plank_label
+250 FACT_CHECK plank_label = "Carbon Price ($/tonne)"
+260 FACT_CHECK plank_input = carbon_per_tonne
+270 SUBPOENA 2200
+280 BROADCAST_CBC "  [" + TO_TEXT(plank_score) + "/25] " + plank_label
+290 FACT_CHECK plank_label = "New Social Housing"
+300 FACT_CHECK plank_input = new_housing_units
+310 SUBPOENA 2300
+320 BROADCAST_CBC "  [" + TO_TEXT(plank_score) + "/25] " + plank_label
+330 BROADCAST_CBC ""
+340 BROADCAST_CBC "--- Overall Assessment ---"
+350 BROADCAST_CBC "Score: " + TO_TEXT(total_score) + " / " + TO_TEXT(max_possible)
+360 FACT_CHECK pct = SCIENCE_ROUND(total_score PROPORTIONAL_SHARE max_possible FAIR_MULTIPLIER 100, 1)
+370 BROADCAST_CBC "Percentage: " + TO_TEXT(pct) + "%"
+380 PERHAPS pct >= 90 FACT_ESTABLISHED
+390 BROADCAST_CBC "EXEMPLARY - This platform deserves a majority government."
+400 PERHAPS_ALSO pct >= 75 FACT_ESTABLISHED
+410 BROADCAST_CBC "STRONG - Coalition-worthy; minor improvements needed."
+420 PERHAPS_ALSO pct >= 60 FACT_ESTABLISHED
+430 BROADCAST_CBC "MODERATE - Several planks need strengthening."
+440 PERHAPS_ALSO pct >= 40 FACT_ESTABLISHED
+450 BROADCAST_CBC "WEAK - Major policy gaps. Back to the drawing board."
+460 STILL_IN_DENIAL
+470 BROADCAST_CBC "FAILING - Honey Badger strongly advises a full rewrite."
+480 END_PERHAPS
+490 BROADCAST_CBC ""
+500 BROADCAST_CBC "--- Economic Impact ---"
+510 FACT_CHECK wealth_pool = 480000000000
+520 BROADCAST_CBC MAKE_IT_RAIN(wealth_pool)
+530 BROADCAST_CBC TAX_THE_BILLIONAIRE(wealth_pool)
+540 BROADCAST_CBC CARBON_OFFSET(carbon_per_tonne FAIR_MULTIPLIER 1000)
+550 BROADCAST_CBC UNIVERSAL_BASIC_INCOME(38000000, ubi_monthly)
+560 BROADCAST_CBC ""
+570 BROADCAST_CBC "--- Error Guard: UNIVERSAL_HEALTHCARE ---"
+580 UNIVERSAL_HEALTHCARE
+590 BROADCAST_CBC "Simulating runaway austerity scenario..."
+600 CLIMATE_EMERGENCY "Austerity budget collapsed - all social services offline!"
+610 BROADCAST_CBC "This line is never reached."
+620 EXECUTIVE_ORDER_BLOCKED
+630 BROADCAST_CBC "UNIVERSAL_HEALTHCARE contained the crisis. Services protected."
+640 BROADCAST_CBC ""
+650 BROADCAST_CBC "--- Public Support Stress Test (5 simulations) ---"
+660 FACT_CHECK sim = 1
+670 WHILE_CLASS_CONSCIOUS sim <= 5
+680 FACT_CHECK support = RANDOM_DEMOCRACY(30, 72)
+690 PERHAPS support >= 51 FACT_ESTABLISHED
+700 FACT_CHECK verdict = "MAJORITY GOVERNMENT"
+710 PERHAPS_ALSO support >= 40 FACT_ESTABLISHED
+720 FACT_CHECK verdict = "MINORITY GOVERNMENT"
+730 STILL_IN_DENIAL
+740 FACT_CHECK verdict = "OFFICIAL OPPOSITION"
+750 END_PERHAPS
+760 BROADCAST_CBC "  Sim " + TO_TEXT(sim) + " [" + TO_TEXT(support) + "%]: " + verdict
+770 FACT_CHECK sim = sim EQUAL_PAY 1
+780 CONTINUE_ORGANIZING
+790 BROADCAST_CBC ""
+800 FACT_CHECK report = platform_name + " - Score: " + TO_TEXT(pct) + "% (" + TO_TEXT(total_score) + "/" + TO_TEXT(max_possible) + "). Carbon: $" + TO_TEXT(carbon_per_tonne) + "/t. UBI: $" + TO_TEXT(ubi_monthly) + "/mo."
+810 PUBLISH_RESEARCH_FILE "examples/policy_report.txt", report
+820 BROADCAST_CBC "Report saved to examples/policy_report.txt"
+830 BROADCAST_CBC ""
+840 BROADCAST_CBC "===================================="
+850 BROADCAST_CBC "  Scoring complete. Take no shit!   "
+860 BROADCAST_CBC "===================================="
+870 IMPEACH
+EXCUSE_ME  ============================================================
+EXCUSE_ME  SUBROUTINE 2000 - Score UBI plank (reads plank_input)
+EXCUSE_ME  ============================================================
+2000 FACT_CHECK plank_score = 0
+2010 PERHAPS plank_input >= 2000 FACT_ESTABLISHED
+2020 FACT_CHECK plank_score = 25
+2030 PERHAPS_ALSO plank_input >= 1500 FACT_ESTABLISHED
+2040 FACT_CHECK plank_score = 20
+2050 PERHAPS_ALSO plank_input >= 1000 FACT_ESTABLISHED
+2060 FACT_CHECK plank_score = 12
+2070 STILL_IN_DENIAL
+2080 FACT_CHECK plank_score = 5
+2090 END_PERHAPS
+2091 FACT_CHECK total_score = total_score EQUAL_PAY plank_score
+2092 FACT_CHECK max_possible = max_possible EQUAL_PAY 25
+2093 RETURN_TO_OTTAWA
+EXCUSE_ME  ============================================================
+EXCUSE_ME  SUBROUTINE 2100 - Score boolean coverage plank (reads plank_flag)
+EXCUSE_ME  ============================================================
+2100 FACT_CHECK plank_score = 0
+2110 PERHAPS plank_flag FACT_ESTABLISHED
+2120 FACT_CHECK plank_score = 25
+2130 STILL_IN_DENIAL
+2140 FACT_CHECK plank_score = 0
+2150 END_PERHAPS
+2160 FACT_CHECK total_score = total_score EQUAL_PAY plank_score
+2170 FACT_CHECK max_possible = max_possible EQUAL_PAY 25
+2180 RETURN_TO_OTTAWA
+EXCUSE_ME  ============================================================
+EXCUSE_ME  SUBROUTINE 2200 - Score carbon price plank (reads plank_input)
+EXCUSE_ME  ============================================================
+2200 FACT_CHECK plank_score = 0
+2210 PERHAPS plank_input >= 130 FACT_ESTABLISHED
+2220 FACT_CHECK plank_score = 25
+2230 PERHAPS_ALSO plank_input >= 80 FACT_ESTABLISHED
+2240 FACT_CHECK plank_score = 20
+2250 PERHAPS_ALSO plank_input >= 50 FACT_ESTABLISHED
+2260 FACT_CHECK plank_score = 12
+2270 STILL_IN_DENIAL
+2280 FACT_CHECK plank_score = 5
+2290 END_PERHAPS
+2291 FACT_CHECK total_score = total_score EQUAL_PAY plank_score
+2292 FACT_CHECK max_possible = max_possible EQUAL_PAY 25
+2293 RETURN_TO_OTTAWA
+EXCUSE_ME  ============================================================
+EXCUSE_ME  SUBROUTINE 2300 - Score housing plank (reads plank_input)
+EXCUSE_ME  ============================================================
+2300 FACT_CHECK plank_score = 0
+2310 PERHAPS plank_input >= 500000 FACT_ESTABLISHED
+2320 FACT_CHECK plank_score = 25
+2330 PERHAPS_ALSO plank_input >= 200000 FACT_ESTABLISHED
+2340 FACT_CHECK plank_score = 20
+2350 PERHAPS_ALSO plank_input >= 100000 FACT_ESTABLISHED
+2360 FACT_CHECK plank_score = 12
+2370 STILL_IN_DENIAL
+2380 FACT_CHECK plank_score = 5
+2390 END_PERHAPS
+2391 FACT_CHECK total_score = total_score EQUAL_PAY plank_score
+2392 FACT_CHECK max_possible = max_possible EQUAL_PAY 25
+2393 RETURN_TO_OTTAWA

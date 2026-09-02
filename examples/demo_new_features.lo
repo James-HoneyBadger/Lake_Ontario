@@ -1,0 +1,118 @@
+EXCUSE_ME  demo_new_features.lo — showcase of all v0.2+ additions
+EXCUSE_ME  (FOR_EACH, PERHAPS_ALSO, string ops, math, list indexing,
+EXCUSE_ME   BREAK_FROM_CAUCUS, NEXT_MOTION, type casting, RANDOM_DEMOCRACY)
+
+10 LAND_ACKNOWLEDGEMENT "Turtle Island"
+20 BROADCAST_CBC "============================================"
+30 BROADCAST_CBC "  LAKE ONTARIO BASIC  v0.2 FEATURES DEMO  "
+40 BROADCAST_CBC "============================================"
+
+50 BROADCAST_CBC ""
+60 BROADCAST_CBC "--- 1. String Operations ---"
+70 FACT_CHECK slogan = "  Tax The Rich And Fund The Commons  "
+80 FACT_CHECK trimmed = STR_TRIM(slogan)
+90 BROADCAST_CBC "Trimmed:   '" + trimmed + "'"
+100 BROADCAST_CBC "UPPERCASE: " + STR_UPPER(trimmed)
+110 BROADCAST_CBC "lowercase: " + STR_LOWER(trimmed)
+120 BROADCAST_CBC "Length:    " + TO_TEXT(STR_LEN(trimmed))
+130 BROADCAST_CBC "Has 'Rich':" + TO_TEXT(STR_CONTAINS(trimmed, "Rich"))
+140 FACT_CHECK revised = STR_REPLACE(trimmed, "Rich", "Billionaire Class")
+150 BROADCAST_CBC "Revised:   " + revised
+160 FACT_CHECK tags = STR_SPLIT("healthcare,housing,transit,education", ",")
+170 BROADCAST_CBC "Policy tags: " + JOIN_COLLECTIVE(tags, " | ")
+
+180 BROADCAST_CBC ""
+190 BROADCAST_CBC "--- 2. Type Casting ---"
+200 FACT_CHECK year_str = "2026"
+210 FACT_CHECK year = TO_NUMBER(year_str)
+220 BROADCAST_CBC "Election year + 4 = " + TO_TEXT(year EQUAL_PAY 4)
+230 FACT_CHECK pi_approx = 3.14159
+240 BROADCAST_CBC "Pi floored: " + TO_TEXT(MATH_FLOOR(pi_approx))
+250 BROADCAST_CBC "Pi ceiled:  " + TO_TEXT(MATH_CEIL(pi_approx))
+
+260 BROADCAST_CBC ""
+270 BROADCAST_CBC "--- 3. Math Built-ins ---"
+280 FACT_CHECK deficit = -4700000000
+290 BROADCAST_CBC "Absolute deficit: $" + TO_TEXT(MATH_ABS(deficit))
+300 FACT_CHECK poll_ndp = 36
+310 FACT_CHECK poll_lib = 42
+320 FACT_CHECK poll_con = 22
+330 BROADCAST_CBC "Leading party poll: " + TO_TEXT(MATH_MAX(poll_ndp, poll_lib, poll_con)) + "%"
+340 BROADCAST_CBC "Trailing party poll: " + TO_TEXT(MATH_MIN(poll_ndp, poll_lib, poll_con)) + "%"
+350 FACT_CHECK lucky_riding = RANDOM_DEMOCRACY(1, 338)
+360 BROADCAST_CBC "Random riding selected for recount: #" + TO_TEXT(lucky_riding)
+
+370 BROADCAST_CBC ""
+380 BROADCAST_CBC "--- 4. FOR_EACH Loop ---"
+390 FACT_CHECK platforms = COLLECTIVE_LIST "Universal Dental", "Pharmacare", "Housing Now", "Green Grid"
+400 FACT_CHECK priorities = COLLECTIVE_LIST
+410 FOR_EACH item IN platforms
+420 FACT_CHECK tagged = "[PRIORITY] " + STR_UPPER(item)
+430 APPEND_TO priorities, tagged
+440 END_EACH
+450 BROADCAST_CBC "Platform priorities tagged: " + TO_TEXT(CITIZEN_COUNT(priorities))
+
+460 BROADCAST_CBC ""
+470 BROADCAST_CBC "--- 5. PERHAPS_ALSO (elif chains) ---"
+480 FACT_CHECK equity_score = 74
+490 PERHAPS equity_score >= 90 FACT_ESTABLISHED
+500 BROADCAST_CBC "Grade: A — Exemplary equity achievement"
+510 PERHAPS_ALSO equity_score >= 75 FACT_ESTABLISHED
+520 BROADCAST_CBC "Grade: B — Strong equity progress, keep pushing"
+530 PERHAPS_ALSO equity_score >= 60 FACT_ESTABLISHED
+540 BROADCAST_CBC "Grade: C — Moderate equity, room to improve"
+550 PERHAPS_ALSO equity_score >= 50 FACT_ESTABLISHED
+560 BROADCAST_CBC "Grade: D — Below expectations, review policy"
+570 STILL_IN_DENIAL
+580 BROADCAST_CBC "Grade: F — Immediate intervention required"
+590 END_PERHAPS
+
+600 BROADCAST_CBC ""
+610 BROADCAST_CBC "--- 6. BREAK_FROM_CAUCUS in FOR_EACH ---"
+620 FACT_CHECK votes = COLLECTIVE_LIST 12, 7, 3, 19, 8, 25, 4
+630 FACT_CHECK quorum = 20
+640 FACT_CHECK running = 0
+650 FACT_CHECK reached_quorum = ALTERNATIVE_FACT
+660 FOR_EACH v IN votes
+670 FACT_CHECK running = running EQUAL_PAY v
+680 PERHAPS running >= quorum FACT_ESTABLISHED
+690 FACT_CHECK reached_quorum = EVIDENCE_BASED
+700 BREAK_FROM_CAUCUS
+710 END_PERHAPS
+720 END_EACH
+730 BROADCAST_CBC "Votes tallied: " + TO_TEXT(running)
+740 BROADCAST_CBC "Quorum reached: " + TO_TEXT(reached_quorum)
+
+750 BROADCAST_CBC ""
+760 BROADCAST_CBC "--- 7. NEXT_MOTION (filter in COAST_TO_COAST) ---"
+770 FACT_CHECK odd_ridings = COLLECTIVE_LIST
+780 COAST_TO_COAST r = 1 UP_TO 15
+790 PERHAPS r MAPLE_SYRUP 2 == 0 FACT_ESTABLISHED
+800 NEXT_MOTION
+810 END_PERHAPS
+820 APPEND_TO odd_ridings, r
+830 THANK_YOU_EH
+840 BROADCAST_CBC "Odd ridings 1-15: " + JOIN_COLLECTIVE(odd_ridings, ", ")
+
+850 BROADCAST_CBC ""
+860 BROADCAST_CBC "--- 8. List Indexing ---"
+870 FACT_CHECK cabinet = COLLECTIVE_LIST "Finance", "Health", "Environment", "Justice", "Housing"
+880 BROADCAST_CBC "First portfolio:  " + FIRST_CITIZEN(cabinet)
+890 BROADCAST_CBC "Third portfolio:  " + CITIZEN_AT(cabinet, 2)
+900 BROADCAST_CBC "Last portfolio:   " + LAST_CITIZEN(cabinet)
+910 REMOVE_FROM cabinet, "Finance"
+920 BROADCAST_CBC "Portfolios after shuffle: " + TO_TEXT(CITIZEN_COUNT(cabinet))
+930 BROADCAST_CBC "New first: " + FIRST_CITIZEN(cabinet)
+
+940 BROADCAST_CBC ""
+950 BROADCAST_CBC "--- 9. SHOW_VARS & RESET_CITIZENS ---"
+960 FACT_CHECK canary = "still here"
+970 SHOW_VARS
+980 RESET_CITIZENS
+990 BROADCAST_CBC "After reset — variables cleared (fresh state)."
+
+1000 BROADCAST_CBC ""
+1010 BROADCAST_CBC "============================================"
+1020 BROADCAST_CBC "  v0.2 Features Demo Complete. Merci, eh!  "
+1030 BROADCAST_CBC "============================================"
+1040 IMPEACH

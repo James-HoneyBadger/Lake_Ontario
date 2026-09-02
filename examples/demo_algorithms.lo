@@ -1,0 +1,158 @@
+EXCUSE_ME  demo_algorithms.lo — classic CS algorithms in Lake Ontario BASIC
+EXCUSE_ME  Demonstrates: COAST_TO_COAST, WHILE_CLASS_CONSCIOUS, FOR_EACH,
+EXCUSE_ME  BREAK_FROM_CAUCUS, NEXT_MOTION, PERHAPS_ALSO, SUBPOENA subroutines,
+EXCUSE_ME  SORT_CITIZENS, AVERAGE_CITIZENS, math ops, string ops
+
+10 LAND_ACKNOWLEDGEMENT "Haudenosaunee Territory"
+20 BROADCAST_CBC "=================================="
+30 BROADCAST_CBC "  LAKE ONTARIO BASIC ALGORITHMS  "
+40 BROADCAST_CBC "=================================="
+
+EXCUSE_ME ============================================================
+EXCUSE_ME  1. Fibonacci sequence — COAST_TO_COAST with running state
+EXCUSE_ME ============================================================
+50 BROADCAST_CBC ""
+60 BROADCAST_CBC "--- 1. Fibonacci Sequence (first 12 terms) ---"
+70 FACT_CHECK fib_a = 0
+80 FACT_CHECK fib_b = 1
+90 BROADCAST_CBC "F(0) = 0"
+100 BROADCAST_CBC "F(1) = 1"
+110 COAST_TO_COAST n = 2 UP_TO 11
+120 FACT_CHECK fib_c = fib_a EQUAL_PAY fib_b
+130 BROADCAST_CBC "F(" + TO_TEXT(n) + ") = " + TO_TEXT(fib_c)
+140 FACT_CHECK fib_a = fib_b
+150 FACT_CHECK fib_b = fib_c
+160 THANK_YOU_EH
+
+EXCUSE_ME ============================================================
+EXCUSE_ME  2. Prime sieve up to 50 — nested loops + BREAK_FROM_CAUCUS
+EXCUSE_ME ============================================================
+170 BROADCAST_CBC ""
+180 BROADCAST_CBC "--- 2. Prime Numbers up to 50 ---"
+190 FACT_CHECK primes = COLLECTIVE_LIST 2
+200 COAST_TO_COAST candidate = 3 UP_TO 50 STEP 2
+210 FACT_CHECK is_prime = EVIDENCE_BASED
+220 FACT_CHECK divisor = 2
+230 WHILE_CLASS_CONSCIOUS divisor FAIR_MULTIPLIER divisor <= candidate
+240 PERHAPS candidate MAPLE_SYRUP divisor == 0 FACT_ESTABLISHED
+250 FACT_CHECK is_prime = ALTERNATIVE_FACT
+260 BREAK_FROM_CAUCUS
+270 END_PERHAPS
+280 FACT_CHECK divisor = divisor EQUAL_PAY 1
+290 CONTINUE_ORGANIZING
+300 PERHAPS is_prime FACT_ESTABLISHED
+310 APPEND_TO primes, candidate
+320 END_PERHAPS
+330 THANK_YOU_EH
+340 BROADCAST_CBC "Primes found: " + TO_TEXT(CITIZEN_COUNT(primes))
+350 BROADCAST_CBC "First: " + TO_TEXT(FIRST_CITIZEN(primes)) + "   Last: " + TO_TEXT(LAST_CITIZEN(primes))
+360 BROADCAST_CBC "List: " + JOIN_COLLECTIVE(primes, "  ")
+
+EXCUSE_ME ============================================================
+EXCUSE_ME  3. Running statistics — FOR_EACH with manual min/max/total
+EXCUSE_ME ============================================================
+370 BROADCAST_CBC ""
+380 BROADCAST_CBC "--- 3. Running Statistics on Vote Counts ---"
+390 FACT_CHECK votes = COLLECTIVE_LIST 43, 38, 19, 55, 62, 31, 48, 27, 71, 14
+400 FACT_CHECK v_total = 0
+410 FACT_CHECK v_count = 0
+420 FACT_CHECK v_max = FIRST_CITIZEN(votes)
+430 FACT_CHECK v_min = FIRST_CITIZEN(votes)
+440 FOR_EACH v IN votes
+450 FACT_CHECK v_total = v_total EQUAL_PAY v
+460 FACT_CHECK v_count = v_count EQUAL_PAY 1
+470 PERHAPS v > v_max FACT_ESTABLISHED
+480 FACT_CHECK v_max = v
+490 END_PERHAPS
+500 PERHAPS v < v_min FACT_ESTABLISHED
+510 FACT_CHECK v_min = v
+520 END_PERHAPS
+530 END_EACH
+540 FACT_CHECK v_avg = SCIENCE_ROUND(v_total PROPORTIONAL_SHARE v_count, 2)
+550 BROADCAST_CBC "Count:   " + TO_TEXT(v_count)
+560 BROADCAST_CBC "Total:   " + TO_TEXT(v_total)
+570 BROADCAST_CBC "Average: " + TO_TEXT(v_avg)
+580 BROADCAST_CBC "Min:     " + TO_TEXT(v_min)
+590 BROADCAST_CBC "Max:     " + TO_TEXT(v_max)
+600 SORT_CITIZENS votes
+610 BROADCAST_CBC "Median:  " + TO_TEXT(CITIZEN_AT(votes, 4))
+
+EXCUSE_ME ============================================================
+EXCUSE_ME  4. Word frequency counter — STR_SPLIT + FOR_EACH + PERHAPS_ALSO
+EXCUSE_ME ============================================================
+620 BROADCAST_CBC ""
+630 BROADCAST_CBC "--- 4. Word Frequency in a Speech ---"
+640 FACT_CHECK speech = "truth equity truth justice equity truth healthcare justice truth equity"
+650 FACT_CHECK words = STR_SPLIT(speech, " ")
+660 FACT_CHECK wc_truth = 0
+670 FACT_CHECK wc_equity = 0
+680 FACT_CHECK wc_justice = 0
+690 FACT_CHECK wc_health = 0
+700 FOR_EACH word IN words
+710 PERHAPS word == "truth" FACT_ESTABLISHED
+720 FACT_CHECK wc_truth = wc_truth EQUAL_PAY 1
+730 PERHAPS_ALSO word == "equity" FACT_ESTABLISHED
+740 FACT_CHECK wc_equity = wc_equity EQUAL_PAY 1
+750 PERHAPS_ALSO word == "justice" FACT_ESTABLISHED
+760 FACT_CHECK wc_justice = wc_justice EQUAL_PAY 1
+770 PERHAPS_ALSO word == "healthcare" FACT_ESTABLISHED
+780 FACT_CHECK wc_health = wc_health EQUAL_PAY 1
+790 END_PERHAPS
+800 END_EACH
+810 BROADCAST_CBC "truth:      " + TO_TEXT(wc_truth) + " times"
+820 BROADCAST_CBC "equity:     " + TO_TEXT(wc_equity) + " times"
+830 BROADCAST_CBC "justice:    " + TO_TEXT(wc_justice) + " times"
+840 BROADCAST_CBC "healthcare: " + TO_TEXT(wc_health) + " times"
+850 FACT_CHECK dominant = "truth"
+860 PERHAPS wc_equity > wc_truth FACT_ESTABLISHED
+870 FACT_CHECK dominant = "equity"
+880 END_PERHAPS
+890 BROADCAST_CBC "Most frequent word: " + dominant
+
+EXCUSE_ME ============================================================
+EXCUSE_ME  5. Subroutine-based grade calculator — SUBPOENA / RETURN_TO_OTTAWA
+EXCUSE_ME ============================================================
+900 BROADCAST_CBC ""
+910 BROADCAST_CBC "--- 5. Grade Calculator via Subroutine ---"
+920 FACT_CHECK score = 85
+930 SUBPOENA 1030
+940 BROADCAST_CBC "Score " + TO_TEXT(score) + " -> Grade: " + grade_result
+950 FACT_CHECK score = 52
+960 SUBPOENA 1030
+970 BROADCAST_CBC "Score " + TO_TEXT(score) + " -> Grade: " + grade_result
+980 FACT_CHECK score = 100
+990 SUBPOENA 1030
+1000 BROADCAST_CBC "Score " + TO_TEXT(score) + " -> Grade: " + grade_result
+
+EXCUSE_ME ============================================================
+EXCUSE_ME  6. Error-safe computation — UNIVERSAL_HEALTHCARE guard
+EXCUSE_ME ============================================================
+1010 BROADCAST_CBC ""
+1010 BROADCAST_CBC "--- 6. Error Guard (UNIVERSAL_HEALTHCARE) ---"
+1010 UNIVERSAL_HEALTHCARE
+1010 BROADCAST_CBC "Attempting risky computation..."
+1010 CLIMATE_EMERGENCY "Austerity budget detected — zero social services remaining!"
+1010 BROADCAST_CBC "This line is never reached."
+1010 EXECUTIVE_ORDER_BLOCKED
+1010 BROADCAST_CBC "🏥 UNIVERSAL_HEALTHCARE caught the CLIMATE_EMERGENCY. Crisis contained."
+
+1020 BROADCAST_CBC ""
+1020 BROADCAST_CBC "=================================="
+1020 BROADCAST_CBC "  Algorithms Demo Complete, eh!  "
+1020 BROADCAST_CBC "=================================="
+1020 IMPEACH
+
+EXCUSE_ME  Grade subroutine — sets grade_result from score
+1030 FACT_CHECK grade_result = "?"
+1040 PERHAPS score >= 90 FACT_ESTABLISHED
+1050 FACT_CHECK grade_result = "A"
+1060 PERHAPS_ALSO score >= 80 FACT_ESTABLISHED
+1070 FACT_CHECK grade_result = "B"
+1080 PERHAPS_ALSO score >= 70 FACT_ESTABLISHED
+1090 FACT_CHECK grade_result = "C"
+1100 PERHAPS_ALSO score >= 60 FACT_ESTABLISHED
+1110 FACT_CHECK grade_result = "D"
+1120 STILL_IN_DENIAL
+1130 FACT_CHECK grade_result = "F"
+1140 END_PERHAPS
+1150 RETURN_TO_OTTAWA
