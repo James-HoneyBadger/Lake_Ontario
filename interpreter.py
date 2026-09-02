@@ -8,6 +8,7 @@ pro-diversity, pro-socialism, and anti-MAGA.
 
 import math
 import os
+import random
 import re
 import sys
 import time
@@ -409,6 +410,55 @@ def to_text(val):
     return LOString(str(val))
 
 
+def math_abs(v):
+    return abs(float(v))
+
+
+def math_floor(v):
+    return int(math.floor(float(v)))
+
+
+def math_ceil(v):
+    return int(math.ceil(float(v)))
+
+
+def math_min(*args):
+    return min(float(a) for a in args)
+
+
+def math_max(*args):
+    return max(float(a) for a in args)
+
+
+def random_democracy(lo=0, hi=100):
+    return random.randint(int(lo), int(hi))
+
+
+def citizen_at(lst, idx):
+    try:
+        return list(lst)[int(idx)]
+    except (IndexError, TypeError, ValueError):
+        return None
+
+
+def first_citizen(lst):
+    try:
+        return list(lst)[0]
+    except (IndexError, TypeError):
+        return None
+
+
+def last_citizen(lst):
+    try:
+        return list(lst)[-1]
+    except (IndexError, TypeError):
+        return None
+
+
+def join_collective(lst, sep=", "):
+    return LOString(str(sep).join(str(x) for x in lst))
+
+
 class LakeOntarioInterpreter:
     def __init__(self):
         self.variables = {}
@@ -541,6 +591,16 @@ class LakeOntarioInterpreter:
             "STR_SPLIT": str_split,
             "TO_NUMBER": to_number,
             "TO_TEXT": to_text,
+            "MATH_ABS": math_abs,
+            "MATH_FLOOR": math_floor,
+            "MATH_CEIL": math_ceil,
+            "MATH_MIN": math_min,
+            "MATH_MAX": math_max,
+            "RANDOM_DEMOCRACY": random_democracy,
+            "CITIZEN_AT": citizen_at,
+            "FIRST_CITIZEN": first_citizen,
+            "LAST_CITIZEN": last_citizen,
+            "JOIN_COLLECTIVE": join_collective,
         }
 
         def var_replacer(match):
@@ -679,6 +739,42 @@ class LakeOntarioInterpreter:
                 elif stmt == "RESET_CITIZENS":
                     self.variables.clear()
                     print("🧹 CITIZEN REGISTER RESET: all values cleared, democracy restored to baseline.")
+                elif stmt.startswith("FOR_EACH "):
+                    # FOR_EACH item IN collection
+                    body = stmt[9:].strip()
+                    var_name, collection_expr = body.split(" IN ", 1)
+                    var_name = var_name.strip()
+                    collection = self.evaluate_expression(collection_expr.strip())
+                    items = list(collection) if isinstance(collection, (list, tuple)) else []
+                    if items:
+                        self.variables[var_name] = items[0]
+                        loop_stack.append({
+                            "type": "foreach",
+                            "var": var_name,
+                            "items": items,
+                            "index": 0,
+                            "start_pc": self.pc,
+                        })
+                    else:
+                        depth = 1
+                        while self.pc < len(self.lines):
+                            _, sub_stmt = self.lines[self.pc]
+                            self.pc += 1
+                            if sub_stmt.startswith("FOR_EACH "):
+                                depth += 1
+                            elif sub_stmt == "END_EACH":
+                                depth -= 1
+                                if depth == 0:
+                                    break
+                elif stmt == "END_EACH":
+                    if loop_stack and loop_stack[-1]["type"] == "foreach":
+                        top = loop_stack[-1]
+                        top["index"] += 1
+                        if top["index"] < len(top["items"]):
+                            self.variables[top["var"]] = top["items"][top["index"]]
+                            self.pc = top["start_pc"]
+                        else:
+                            loop_stack.pop()
                 elif stmt.startswith("APPEND_TO "):
                     body = stmt[10:].strip()
                     target_name, item_expr = body.split(",", 1)
@@ -690,6 +786,16 @@ class LakeOntarioInterpreter:
                         self.variables[target_name] = [self.variables[target_name]]
                     self.variables[target_name].append(item_value)
                     print(f"📎 Appended to {target_name}: {item_value}")
+                elif stmt.startswith("REMOVE_FROM "):
+                    body = stmt[12:].strip()
+                    target_name, item_expr = body.split(",", 1)
+                    target_name = target_name.strip()
+                    item_value = self.evaluate_expression(item_expr.strip())
+                    if target_name in self.variables and isinstance(self.variables[target_name], list):
+                        try:
+                            self.variables[target_name].remove(item_value)
+                        except ValueError:
+                            pass
                 elif stmt.startswith("SORT_CITIZENS "):
                     var_name = stmt[14:].strip()
                     if var_name in self.variables:
@@ -805,10 +911,28 @@ class LakeOntarioInterpreter:
                                 if depth == 0:
                                     self.pc += 1
                                     break
-                            elif sub_stmt == "STILL_IN_DENIAL" and depth == 1:
+                            elif depth == 1 and sub_stmt == "STILL_IN_DENIAL":
                                 self.pc += 1
                                 break
+                            elif depth == 1 and sub_stmt.startswith("PERHAPS_ALSO "):
+                                cond_part = sub_stmt[13:].replace(" FACT_ESTABLISHED", "").strip()
+                                if self.evaluate_expression(cond_part):
+                                    self.pc += 1  # advance past PERHAPS_ALSO, enter its body
+                                    break
+                                # else: fall through to self.pc += 1 and keep scanning
                             self.pc += 1
+                elif stmt.startswith("PERHAPS_ALSO "):
+                    # reached during execution → a true branch already ran; skip to END_PERHAPS
+                    depth = 1
+                    while self.pc < len(self.lines):
+                        _, sub_stmt = self.lines[self.pc]
+                        self.pc += 1
+                        if sub_stmt.startswith("PERHAPS "):
+                            depth += 1
+                        elif sub_stmt == "END_PERHAPS":
+                            depth -= 1
+                            if depth == 0:
+                                break
                 elif stmt == "STILL_IN_DENIAL":
                     depth = 1
                     while self.pc < len(self.lines) and depth > 0:
@@ -883,8 +1007,14 @@ class LakeOntarioInterpreter:
                 elif stmt == "BREAK_FROM_CAUCUS":
                     if loop_stack:
                         top = loop_stack.pop()
-                        end_marker = "THANK_YOU_EH" if top["type"] == "for" else "CONTINUE_ORGANIZING"
-                        start_kw = "COAST_TO_COAST " if top["type"] == "for" else "WHILE_CLASS_CONSCIOUS "
+                        _loop_markers = {
+                            "for":     ("COAST_TO_COAST ",      "THANK_YOU_EH"),
+                            "while":   ("WHILE_CLASS_CONSCIOUS ", "CONTINUE_ORGANIZING"),
+                            "foreach": ("FOR_EACH ",              "END_EACH"),
+                        }
+                        start_kw, end_marker = _loop_markers.get(
+                            top["type"], ("COAST_TO_COAST ", "THANK_YOU_EH")
+                        )
                         depth = 1
                         while self.pc < len(self.lines):
                             _, sub_stmt = self.lines[self.pc]
@@ -911,6 +1041,13 @@ class LakeOntarioInterpreter:
                             res = self.evaluate_expression(top["cond"])
                             if res:
                                 self.pc = top["start_pc"] + 1
+                            else:
+                                loop_stack.pop()
+                        elif top["type"] == "foreach":
+                            top["index"] += 1
+                            if top["index"] < len(top["items"]):
+                                self.variables[top["var"]] = top["items"][top["index"]]
+                                self.pc = top["start_pc"]
                             else:
                                 loop_stack.pop()
                 elif stmt.startswith("SUBPOENA "):
@@ -1021,6 +1158,15 @@ def validate_script(code):
         elif stmt.startswith("INPUT_BOX") and not stmt[10:].strip():
             label = f"Line {line_number}" if line_number is not None else "Line ?"
             errors.append(f"{label}: INPUT_BOX requires a variable name")
+        elif stmt.startswith("FOR_EACH ") and " IN " not in stmt:
+            label = f"Line {line_number}" if line_number is not None else "Line ?"
+            errors.append(f"{label}: FOR_EACH statement must include 'IN'")
+        elif stmt.startswith("PERHAPS_ALSO") and not stmt[13:].strip():
+            label = f"Line {line_number}" if line_number is not None else "Line ?"
+            errors.append(f"{label}: PERHAPS_ALSO requires a condition")
+        elif stmt.startswith("REMOVE_FROM") and "," not in stmt:
+            label = f"Line {line_number}" if line_number is not None else "Line ?"
+            errors.append(f"{label}: REMOVE_FROM must separate variable and value with a comma")
 
     return errors
 

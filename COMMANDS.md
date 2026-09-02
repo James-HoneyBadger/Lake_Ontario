@@ -165,6 +165,26 @@
   - Creates a dictionary of named values.
 - `CITIZEN_COUNT(...)`
   - Returns the number of items in a collection or argument list.
+- `CITIZEN_AT(list, index)`
+  - Returns the item at the given zero-based index in a list.
+- `FIRST_CITIZEN(list)`
+  - Returns the first item in a list.
+- `LAST_CITIZEN(list)`
+  - Returns the last item in a list.
+- `JOIN_COLLECTIVE(list, separator)`
+  - Joins list items into a single string using the separator.
+- `MATH_ABS(value)`
+  - Returns the absolute value.
+- `MATH_FLOOR(value)`
+  - Rounds down to the nearest integer.
+- `MATH_CEIL(value)`
+  - Rounds up to the nearest integer.
+- `MATH_MIN(a, b, ...)`
+  - Returns the smallest of the given values.
+- `MATH_MAX(a, b, ...)`
+  - Returns the largest of the given values.
+- `RANDOM_DEMOCRACY(lo, hi)`
+  - Returns a random integer between `lo` and `hi` inclusive.
 - `STR_UPPER(text)`
   - Converts text to uppercase.
 - `STR_LOWER(text)`
@@ -196,6 +216,14 @@
   - Exits the innermost active loop immediately.
 - `NEXT_MOTION`
   - Skips to the next iteration of the innermost active loop.
+- `FOR_EACH item IN collection`
+  - Iterates over each item in a list, assigning it to `item` each pass.
+- `END_EACH`
+  - Ends a `FOR_EACH` loop.
+- `PERHAPS_ALSO condition [FACT_ESTABLISHED]`
+  - An `else if` branch inside a `PERHAPS` block.
+- `REMOVE_FROM variable, value`
+  - Removes the first matching value from a list variable.
 
 ## Operator Aliases
 

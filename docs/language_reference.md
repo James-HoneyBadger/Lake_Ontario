@@ -84,6 +84,14 @@
   - Exits the innermost active loop immediately.
 - `NEXT_MOTION`
   - Skips to the next iteration of the innermost active loop.
+- `FOR_EACH item IN collection`
+  - Iterates over each item in a list, assigning it to `item` on every pass.
+- `END_EACH`
+  - Ends a `FOR_EACH` block.
+- `PERHAPS_ALSO condition [FACT_ESTABLISHED]`
+  - An `else if` branch inside a `PERHAPS` / `END_PERHAPS` block.
+- `REMOVE_FROM variable, value`
+  - Removes the first matching value from a list variable.
 - `SET_PEN_COLOR "color"`
   - Sets the drawing pen color for future shapes and lines.
 - `SET_FILL_COLOR "color"`
@@ -162,6 +170,10 @@
 - `COLLECTIVE_APPEND(target, item)` — returns a new list with item appended to target.
 - `SORT_CITIZENS(list)` — returns a sorted copy of a list.
 - `AVERAGE_CITIZENS(list)` — returns the numeric average of a list.
+- `CITIZEN_AT(list, index)` — returns the item at the given zero-based index.
+- `FIRST_CITIZEN(list)` — returns the first item in a list.
+- `LAST_CITIZEN(list)` — returns the last item in a list.
+- `JOIN_COLLECTIVE(list, separator)` — joins list items into a string.
 - `STR_UPPER(text)` — converts text to uppercase.
 - `STR_LOWER(text)` — converts text to lowercase.
 - `STR_LEN(text)` — returns the character length of text.
@@ -171,3 +183,9 @@
 - `STR_SPLIT(text, delimiter)` — splits text into a list on the given delimiter.
 - `TO_NUMBER(text)` — converts text to an integer or float.
 - `TO_TEXT(value)` — converts any value to its text representation.
+- `MATH_ABS(value)` — returns the absolute value.
+- `MATH_FLOOR(value)` — rounds down to the nearest integer.
+- `MATH_CEIL(value)` — rounds up to the nearest integer.
+- `MATH_MIN(a, b, ...)` — returns the smallest of the given values.
+- `MATH_MAX(a, b, ...)` — returns the largest of the given values.
+- `RANDOM_DEMOCRACY(lo, hi)` — returns a random integer between `lo` and `hi` inclusive.

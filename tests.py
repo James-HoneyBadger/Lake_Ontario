@@ -441,6 +441,181 @@ def run_repl_error_recovery_test():
     return True
 
 
+def run_for_each_test():
+    interpreter = LakeOntarioInterpreter()
+    script = """
+10 FACT_CHECK total = 0
+20 FACT_CHECK nums = COLLECTIVE_LIST 10, 20, 30
+30 FOR_EACH n IN nums
+40 FACT_CHECK total = total EQUAL_PAY n
+50 END_EACH
+60 BROADCAST_CBC total
+70 FACT_CHECK items = COLLECTIVE_LIST "a", "b", "c"
+80 FACT_CHECK joined = JOIN_COLLECTIVE(items, "-")
+90 BROADCAST_CBC joined
+100 FACT_CHECK first = FIRST_CITIZEN(nums)
+110 FACT_CHECK last = LAST_CITIZEN(nums)
+120 FACT_CHECK mid = CITIZEN_AT(nums, 1)
+130 BROADCAST_CBC first
+140 BROADCAST_CBC last
+150 BROADCAST_CBC mid
+""".strip()
+
+    interpreter.load_script(script)
+    output = StringIO()
+    try:
+        with contextlib.redirect_stdout(output):
+            interpreter.run()
+    except SystemExit:
+        sys.stdout.write("FAIL for-each: interpreter exited unexpectedly\n")
+        sys.stdout.flush()
+        return False
+
+    result = output.getvalue()
+    checks = ["60" in result, "a-b-c" in result, "10" in result, "30" in result, "20" in result]
+    if not all(checks):
+        sys.stdout.write(f"FAIL for-each: unexpected output:\n{result}\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS for-each\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_perhaps_also_test():
+    interpreter = LakeOntarioInterpreter()
+    script = """
+10 FACT_CHECK score = 75
+20 PERHAPS score >= 90 FACT_ESTABLISHED
+30 BROADCAST_CBC "A"
+40 PERHAPS_ALSO score >= 75 FACT_ESTABLISHED
+50 BROADCAST_CBC "B"
+60 PERHAPS_ALSO score >= 60 FACT_ESTABLISHED
+70 BROADCAST_CBC "C"
+80 STILL_IN_DENIAL
+90 BROADCAST_CBC "F"
+100 END_PERHAPS
+110 FACT_CHECK score2 = 40
+120 PERHAPS score2 >= 90 FACT_ESTABLISHED
+130 BROADCAST_CBC "A2"
+140 PERHAPS_ALSO score2 >= 60 FACT_ESTABLISHED
+150 BROADCAST_CBC "C2"
+160 STILL_IN_DENIAL
+170 BROADCAST_CBC "F2"
+180 END_PERHAPS
+""".strip()
+
+    interpreter.load_script(script)
+    output = StringIO()
+    try:
+        with contextlib.redirect_stdout(output):
+            interpreter.run()
+    except SystemExit:
+        sys.stdout.write("FAIL perhaps-also: interpreter exited unexpectedly\n")
+        sys.stdout.flush()
+        return False
+
+    result = output.getvalue().splitlines()
+    if result != ["B", "F2"]:
+        sys.stdout.write(f"FAIL perhaps-also: expected ['B', 'F2'], got {result}\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS perhaps-also\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_math_and_random_test():
+    interpreter = LakeOntarioInterpreter()
+    script = """
+10 FACT_CHECK a = MATH_ABS(-42)
+20 FACT_CHECK b = MATH_FLOOR(3.9)
+30 FACT_CHECK c = MATH_CEIL(3.1)
+40 FACT_CHECK d = MATH_MIN(10, 3, 7)
+50 FACT_CHECK e = MATH_MAX(10, 3, 7)
+60 FACT_CHECK r = RANDOM_DEMOCRACY(1, 100)
+70 BROADCAST_CBC a
+80 BROADCAST_CBC b
+90 BROADCAST_CBC c
+100 BROADCAST_CBC d
+110 BROADCAST_CBC e
+120 BROADCAST_CBC r
+""".strip()
+
+    interpreter.load_script(script)
+    output = StringIO()
+    try:
+        with contextlib.redirect_stdout(output):
+            interpreter.run()
+    except SystemExit:
+        sys.stdout.write("FAIL math-random: interpreter exited unexpectedly\n")
+        sys.stdout.flush()
+        return False
+
+    lines = output.getvalue().splitlines()
+    try:
+        checks = (
+            float(lines[0]) == 42.0
+            and int(lines[1]) == 3
+            and int(lines[2]) == 4
+            and float(lines[3]) == 3.0
+            and float(lines[4]) == 10.0
+            and 1 <= int(lines[5]) <= 100
+        )
+    except (ValueError, IndexError):
+        checks = False
+
+    if not checks:
+        sys.stdout.write(f"FAIL math-random: unexpected output: {lines}\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS math-random\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_list_ops_test():
+    interpreter = LakeOntarioInterpreter()
+    script = """
+10 FACT_CHECK lst = COLLECTIVE_LIST 3, 1, 4, 1, 5
+20 REMOVE_FROM lst, 1
+30 BROADCAST_CBC CITIZEN_COUNT(lst)
+40 SORT_CITIZENS lst
+50 BROADCAST_CBC FIRST_CITIZEN(lst)
+60 BROADCAST_CBC LAST_CITIZEN(lst)
+""".strip()
+
+    interpreter.load_script(script)
+    output = StringIO()
+    try:
+        with contextlib.redirect_stdout(output):
+            interpreter.run()
+    except SystemExit:
+        sys.stdout.write("FAIL list-ops: interpreter exited unexpectedly\n")
+        sys.stdout.flush()
+        return False
+
+    lines = output.getvalue().splitlines()
+    # remove first 1 → [3, 4, 1, 5], count=4; sorted → [1, 3, 4, 5]
+    # line 1 is the SORT_CITIZENS print message; first/last are lines 2 and 3
+    try:
+        ok = int(lines[0]) == 4 and float(lines[2]) == 1.0 and float(lines[3]) == 5.0
+    except (ValueError, IndexError):
+        ok = False
+
+    if not ok:
+        sys.stdout.write(f"FAIL list-ops: unexpected output: {lines}\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS list-ops\n")
+    sys.stdout.flush()
+    return True
+
+
 if __name__ == "__main__":
     all_passed = True
     sys.stdout.write("Starting Lake Ontario BASIC interpreter tests...\n")
@@ -459,6 +634,10 @@ if __name__ == "__main__":
     all_passed = run_string_operations_test() and all_passed
     all_passed = run_loop_control_test() and all_passed
     all_passed = run_repl_error_recovery_test() and all_passed
+    all_passed = run_for_each_test() and all_passed
+    all_passed = run_perhaps_also_test() and all_passed
+    all_passed = run_math_and_random_test() and all_passed
+    all_passed = run_list_ops_test() and all_passed
 
     if all_passed:
         sys.stdout.write("\nAll tests passed.\n")
