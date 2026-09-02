@@ -163,7 +163,26 @@
   - Creates a list of values, including the shorthand BASIC-style call form used in scripts.
 - `MUTUAL_AID_REGISTRY key = value, ...`
   - Creates a dictionary of named values.
-- `SORT_CITIZENS variable`
+- `CITIZEN_COUNT(...)`
+  - Returns the number of items in a collection or argument list.
+- `STR_UPPER(text)`
+  - Converts text to uppercase.
+- `STR_LOWER(text)`
+  - Converts text to lowercase.
+- `STR_LEN(text)`
+  - Returns the character length of text.
+- `STR_TRIM(text)`
+  - Strips leading and trailing whitespace from text.
+- `STR_CONTAINS(text, substring)`
+  - Returns `EVIDENCE_BASED` if substring is found in text.
+- `STR_REPLACE(text, old, new)`
+  - Replaces all occurrences of old with new in text.
+- `STR_SPLIT(text, delimiter)`
+  - Splits text into a list on the given delimiter.
+- `TO_NUMBER(text)`
+  - Converts a text value to an integer or float.
+- `TO_TEXT(value)`
+  - Converts any value to its text representation.
   - Sorts a list-like variable in ascending order.
 - `AVERAGE_CITIZENS variable`
   - Computes the numeric average of a list-like variable and stores it in `variable_average`.
@@ -173,6 +192,10 @@
   - Clears all stored variables and resets the live state.
 - `APPEND_TO variable, value`
   - Appends a value to a list-like variable.
+- `BREAK_FROM_CAUCUS`
+  - Exits the innermost active loop immediately.
+- `NEXT_MOTION`
+  - Skips to the next iteration of the innermost active loop.
 
 ## Operator Aliases
 

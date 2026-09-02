@@ -369,6 +369,46 @@ def average_citizens(values):
         return 0.0
 
 
+def str_upper(s):
+    return LOString(str(s).upper())
+
+
+def str_lower(s):
+    return LOString(str(s).lower())
+
+
+def str_length(s):
+    return len(str(s))
+
+
+def str_trim(s):
+    return LOString(str(s).strip())
+
+
+def str_contains(s, sub):
+    return str(sub) in str(s)
+
+
+def str_replace(s, old, new):
+    return LOString(str(s).replace(str(old), str(new)))
+
+
+def str_split(s, delim=","):
+    return str(s).split(str(delim))
+
+
+def to_number(s):
+    try:
+        text = str(s).strip()
+        return int(text) if "." not in text else float(text)
+    except (ValueError, TypeError):
+        return 0
+
+
+def to_text(val):
+    return LOString(str(val))
+
+
 class LakeOntarioInterpreter:
     def __init__(self):
         self.variables = {}
@@ -417,6 +457,8 @@ class LakeOntarioInterpreter:
             return None
 
         expr = re.sub(r"\bCOLLECTIVE_LIST\s+(.+)", r"COLLECTIVE_LIST(\1)", expr)
+        # bare COLLECTIVE_LIST with no args → empty list
+        expr = re.sub(r"\bCOLLECTIVE_LIST\b(?!\s*\()", r"COLLECTIVE_LIST()", expr)
         expr = re.sub(
             r"\bMUTUAL_AID_REGISTRY\s+(.+)",
             r"MUTUAL_AID_REGISTRY(\1)",
@@ -490,6 +532,15 @@ class LakeOntarioInterpreter:
             "AVERAGE_CITIZENS": average_citizens,
             "COLLECTIVE_LIST": lambda *args: list(args),
             "MUTUAL_AID_REGISTRY": lambda **kwargs: dict(kwargs),
+            "STR_UPPER": str_upper,
+            "STR_LOWER": str_lower,
+            "STR_LEN": str_length,
+            "STR_TRIM": str_trim,
+            "STR_CONTAINS": str_contains,
+            "STR_REPLACE": str_replace,
+            "STR_SPLIT": str_split,
+            "TO_NUMBER": to_number,
+            "TO_TEXT": to_text,
         }
 
         def var_replacer(match):
@@ -829,6 +880,39 @@ class LakeOntarioInterpreter:
                             self.pc = top["start_pc"]
                         else:
                             loop_stack.pop()
+                elif stmt == "BREAK_FROM_CAUCUS":
+                    if loop_stack:
+                        top = loop_stack.pop()
+                        end_marker = "THANK_YOU_EH" if top["type"] == "for" else "CONTINUE_ORGANIZING"
+                        start_kw = "COAST_TO_COAST " if top["type"] == "for" else "WHILE_CLASS_CONSCIOUS "
+                        depth = 1
+                        while self.pc < len(self.lines):
+                            _, sub_stmt = self.lines[self.pc]
+                            self.pc += 1
+                            if sub_stmt.startswith(start_kw):
+                                depth += 1
+                            elif sub_stmt == end_marker:
+                                depth -= 1
+                                if depth == 0:
+                                    break
+                elif stmt == "NEXT_MOTION":
+                    if loop_stack:
+                        top = loop_stack[-1]
+                        if top["type"] == "for":
+                            current_val = self.variables[top["var"]] + top["step"]
+                            if (top["step"] > 0 and current_val <= top["end"]) or (
+                                top["step"] < 0 and current_val >= top["end"]
+                            ):
+                                self.variables[top["var"]] = current_val
+                                self.pc = top["start_pc"]
+                            else:
+                                loop_stack.pop()
+                        elif top["type"] == "while":
+                            res = self.evaluate_expression(top["cond"])
+                            if res:
+                                self.pc = top["start_pc"] + 1
+                            else:
+                                loop_stack.pop()
                 elif stmt.startswith("SUBPOENA "):
                     target = int(stmt[9:].strip())
                     if target in self.line_map:
@@ -965,8 +1049,13 @@ def run_repl():
         try:
             interpreter.load_script(statement)
             interpreter.run()
-        except SystemExit:
-            break
+        except SystemExit as exc:
+            if exc.code == 0:
+                break
+            # Runtime error already printed by run(); preserve variables across reset
+            saved_vars = interpreter.variables.copy()
+            interpreter = LakeOntarioInterpreter()
+            interpreter.variables = saved_vars
         except (LakeOntarioInterpreterError, OSError, ValueError, TypeError,
                 ZeroDivisionError, SyntaxError, NameError) as exc:
             print(f"🚨 REPL ERROR: {exc}")

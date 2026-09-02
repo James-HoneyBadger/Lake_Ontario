@@ -18,6 +18,8 @@
   - Prompts the user and stores the input.
 - `INPUT_BOX variable_name`
   - Prompts the user with a GUI input dialog and stores the response.
+- `INPUT_BOX variable_name`
+  - Prompts the user with a GUI input dialog and stores the response.
 - `PERHAPS condition FACT_ESTABLISHED`
   - Starts a conditional block.
 - `STILL_IN_DENIAL`
@@ -68,6 +70,26 @@
   - Grants approval from unionized beavers and poets.
 - `ELECTORATE_PULSE value`
   - Reports mock public enthusiasm as a percentage.
+- `SHOW_VARS`
+  - Prints all current variables to output (useful for debugging).
+- `RESET_CITIZENS`
+  - Clears all variables and resets interpreter state to baseline.
+- `APPEND_TO variable, value`
+  - Appends a value to a list-stored variable.
+- `SORT_CITIZENS variable`
+  - Sorts the named list variable in ascending order.
+- `AVERAGE_CITIZENS variable`
+  - Computes the numeric average of a list variable and stores it in `variable_average`.
+- `BREAK_FROM_CAUCUS`
+  - Exits the innermost active loop immediately.
+- `NEXT_MOTION`
+  - Skips to the next iteration of the innermost active loop.
+- `SET_PEN_COLOR "color"`
+  - Sets the drawing pen color for future shapes and lines.
+- `SET_FILL_COLOR "color"`
+  - Sets the fill color for filled shapes.
+- `SET_CANVAS_BG "color"`
+  - Sets the graphics canvas background color.
 - `CLEAR_GRAPHICS`
   - Clears the GUI graphics canvas while running in the GUI IDE.
 - `DRAW_LINE x1, y1, x2, y2`
@@ -136,3 +158,16 @@
 - `ELECTORATE_PULSE(value)` — reports a mock-stat poll percentage.
 - `COLLECTIVE_LIST(...)` — creates a list of values.
 - `MUTUAL_AID_REGISTRY(...)` — creates a dictionary of named values.
+- `CITIZEN_COUNT(...)` — returns the number of items in a collection or argument list.
+- `COLLECTIVE_APPEND(target, item)` — returns a new list with item appended to target.
+- `SORT_CITIZENS(list)` — returns a sorted copy of a list.
+- `AVERAGE_CITIZENS(list)` — returns the numeric average of a list.
+- `STR_UPPER(text)` — converts text to uppercase.
+- `STR_LOWER(text)` — converts text to lowercase.
+- `STR_LEN(text)` — returns the character length of text.
+- `STR_TRIM(text)` — strips leading and trailing whitespace.
+- `STR_CONTAINS(text, substring)` — returns `EVIDENCE_BASED` if substring is found.
+- `STR_REPLACE(text, old, new)` — replaces all occurrences of old with new.
+- `STR_SPLIT(text, delimiter)` — splits text into a list on the given delimiter.
+- `TO_NUMBER(text)` — converts text to an integer or float.
+- `TO_TEXT(value)` — converts any value to its text representation.

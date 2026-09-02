@@ -314,6 +314,133 @@ def run_validation_and_diagnostics_test():
     return True
 
 
+def run_string_operations_test():
+    interpreter = LakeOntarioInterpreter()
+    script = """
+10 FACT_CHECK greeting = "  Hello, Comrade!  "
+20 FACT_CHECK upper = STR_UPPER(greeting)
+30 FACT_CHECK lower = STR_LOWER(greeting)
+40 FACT_CHECK trimmed = STR_TRIM(greeting)
+50 FACT_CHECK length = STR_LEN(trimmed)
+60 FACT_CHECK has_hello = STR_CONTAINS(greeting, "Hello")
+70 FACT_CHECK replaced = STR_REPLACE(greeting, "Hello", "Greetings")
+80 FACT_CHECK parts = STR_SPLIT("one,two,three", ",")
+90 FACT_CHECK num = TO_NUMBER("42")
+100 FACT_CHECK text = TO_TEXT(99)
+110 BROADCAST_CBC upper
+120 BROADCAST_CBC lower
+130 BROADCAST_CBC trimmed
+140 BROADCAST_CBC length
+150 BROADCAST_CBC has_hello
+160 BROADCAST_CBC replaced
+170 BROADCAST_CBC num
+180 BROADCAST_CBC text
+""".strip()
+
+    interpreter.load_script(script)
+    output = StringIO()
+    try:
+        with contextlib.redirect_stdout(output):
+            interpreter.run()
+    except SystemExit:
+        sys.stdout.write("FAIL string-ops: interpreter exited unexpectedly\n")
+        sys.stdout.flush()
+        return False
+
+    result = output.getvalue()
+    checks = [
+        "HELLO, COMRADE!" in result,
+        "hello, comrade!" in result,
+        "Hello, Comrade!" in result,
+        "15" in result,
+        "True" in result,
+        "Greetings" in result,
+        "42" in result,
+        "99" in result,
+    ]
+    if not all(checks):
+        sys.stdout.write("FAIL string-ops: one or more string operations produced unexpected output\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS string-ops\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_loop_control_test():
+    interpreter = LakeOntarioInterpreter()
+    script = """
+10 FACT_CHECK total = 0
+20 COAST_TO_COAST i = 1 UP_TO 10
+30 PERHAPS i == 5 FACT_ESTABLISHED
+40 BREAK_FROM_CAUCUS
+50 END_PERHAPS
+60 FACT_CHECK total = total EQUAL_PAY i
+70 THANK_YOU_EH
+80 BROADCAST_CBC total
+90 FACT_CHECK count = 0
+100 COAST_TO_COAST j = 1 UP_TO 6
+110 PERHAPS j == 3 FACT_ESTABLISHED
+120 NEXT_MOTION
+130 END_PERHAPS
+140 FACT_CHECK count = count EQUAL_PAY 1
+150 THANK_YOU_EH
+160 BROADCAST_CBC count
+""".strip()
+
+    interpreter.load_script(script)
+    output = StringIO()
+    try:
+        with contextlib.redirect_stdout(output):
+            interpreter.run()
+    except SystemExit:
+        sys.stdout.write("FAIL loop-control: interpreter exited unexpectedly\n")
+        sys.stdout.flush()
+        return False
+
+    result = output.getvalue().splitlines()
+    # break at 5 -> total = 1+2+3+4 = 10; skip j==3 -> count = 5 (1,2,4,5,6)
+    if len(result) < 2 or result[0].strip() != "10" or result[1].strip() != "5":
+        sys.stdout.write(
+            f"FAIL loop-control: expected '10' and '5', got {result[:2]}\n"
+        )
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS loop-control\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_repl_error_recovery_test():
+    import subprocess
+
+    proc = subprocess.run(
+        [sys.executable, "interpreter.py", "--repl"],
+        input=(
+            'FACT_CHECK x = 10\n'
+            'CLIMATE_EMERGENCY "deliberate crash"\n'
+            'BROADCAST_CBC x\n'
+            'IMPEACH\n'
+        ),
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    output = proc.stdout + proc.stderr
+    if "10" not in output:
+        sys.stdout.write(
+            "FAIL repl-error-recovery: REPL did not survive a runtime error\n"
+        )
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS repl-error-recovery\n")
+    sys.stdout.flush()
+    return True
+
+
 if __name__ == "__main__":
     all_passed = True
     sys.stdout.write("Starting Lake Ontario BASIC interpreter tests...\n")
@@ -329,6 +456,9 @@ if __name__ == "__main__":
     all_passed = run_expanded_commands_test() and all_passed
     all_passed = run_civic_data_commands_test() and all_passed
     all_passed = run_validation_and_diagnostics_test() and all_passed
+    all_passed = run_string_operations_test() and all_passed
+    all_passed = run_loop_control_test() and all_passed
+    all_passed = run_repl_error_recovery_test() and all_passed
 
     if all_passed:
         sys.stdout.write("\nAll tests passed.\n")
