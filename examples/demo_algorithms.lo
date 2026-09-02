@@ -115,44 +115,44 @@ EXCUSE_ME ============================================================
 900 BROADCAST_CBC ""
 910 BROADCAST_CBC "--- 5. Grade Calculator via Subroutine ---"
 920 FACT_CHECK score = 85
-930 SUBPOENA 1030
+930 SUBPOENA 2000
 940 BROADCAST_CBC "Score " + TO_TEXT(score) + " -> Grade: " + grade_result
 950 FACT_CHECK score = 52
-960 SUBPOENA 1030
+960 SUBPOENA 2000
 970 BROADCAST_CBC "Score " + TO_TEXT(score) + " -> Grade: " + grade_result
 980 FACT_CHECK score = 100
-990 SUBPOENA 1030
+990 SUBPOENA 2000
 1000 BROADCAST_CBC "Score " + TO_TEXT(score) + " -> Grade: " + grade_result
 
 EXCUSE_ME ============================================================
 EXCUSE_ME  6. Error-safe computation — UNIVERSAL_HEALTHCARE guard
 EXCUSE_ME ============================================================
 1010 BROADCAST_CBC ""
-1010 BROADCAST_CBC "--- 6. Error Guard (UNIVERSAL_HEALTHCARE) ---"
-1010 UNIVERSAL_HEALTHCARE
-1010 BROADCAST_CBC "Attempting risky computation..."
-1010 CLIMATE_EMERGENCY "Austerity budget detected — zero social services remaining!"
-1010 BROADCAST_CBC "This line is never reached."
-1010 EXECUTIVE_ORDER_BLOCKED
-1010 BROADCAST_CBC "🏥 UNIVERSAL_HEALTHCARE caught the CLIMATE_EMERGENCY. Crisis contained."
+1020 BROADCAST_CBC "--- 6. Error Guard (UNIVERSAL_HEALTHCARE) ---"
+1030 UNIVERSAL_HEALTHCARE
+1040 BROADCAST_CBC "Attempting risky computation..."
+1050 CLIMATE_EMERGENCY "Austerity budget detected — zero social services remaining!"
+1060 BROADCAST_CBC "This line is never reached."
+1070 EXECUTIVE_ORDER_BLOCKED
+1080 BROADCAST_CBC "🏥 UNIVERSAL_HEALTHCARE caught the CLIMATE_EMERGENCY. Crisis contained."
 
-1020 BROADCAST_CBC ""
-1020 BROADCAST_CBC "=================================="
-1020 BROADCAST_CBC "  Algorithms Demo Complete, eh!  "
-1020 BROADCAST_CBC "=================================="
-1020 IMPEACH
+1090 BROADCAST_CBC ""
+1100 BROADCAST_CBC "=================================="
+1110 BROADCAST_CBC "  Algorithms Demo Complete, eh!  "
+1120 BROADCAST_CBC "=================================="
+1130 IMPEACH
 
 EXCUSE_ME  Grade subroutine — sets grade_result from score
-1030 FACT_CHECK grade_result = "?"
-1040 PERHAPS score >= 90 FACT_ESTABLISHED
-1050 FACT_CHECK grade_result = "A"
-1060 PERHAPS_ALSO score >= 80 FACT_ESTABLISHED
-1070 FACT_CHECK grade_result = "B"
-1080 PERHAPS_ALSO score >= 70 FACT_ESTABLISHED
-1090 FACT_CHECK grade_result = "C"
-1100 PERHAPS_ALSO score >= 60 FACT_ESTABLISHED
-1110 FACT_CHECK grade_result = "D"
-1120 STILL_IN_DENIAL
-1130 FACT_CHECK grade_result = "F"
-1140 END_PERHAPS
-1150 RETURN_TO_OTTAWA
+2000 FACT_CHECK grade_result = "?"
+2010 PERHAPS score >= 90 FACT_ESTABLISHED
+2020 FACT_CHECK grade_result = "A"
+2030 PERHAPS_ALSO score >= 80 FACT_ESTABLISHED
+2040 FACT_CHECK grade_result = "B"
+2050 PERHAPS_ALSO score >= 70 FACT_ESTABLISHED
+2060 FACT_CHECK grade_result = "C"
+2070 PERHAPS_ALSO score >= 60 FACT_ESTABLISHED
+2080 FACT_CHECK grade_result = "D"
+2090 STILL_IN_DENIAL
+2100 FACT_CHECK grade_result = "F"
+2110 END_PERHAPS
+2120 RETURN_TO_OTTAWA

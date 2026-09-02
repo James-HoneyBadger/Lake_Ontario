@@ -7,6 +7,7 @@ import contextlib
 import io
 import os
 import sys
+from pathlib import Path
 
 try:
     import tkinter as tk
@@ -211,29 +212,25 @@ class LakeOntarioIDEGUI:
         self.root.config(menu=menubar)
 
     def _build_help_text(self):
-        help_text = "Lake Ontario BASIC GUI IDE Command Reference\n\n"
-        help_text += "Supported GUI commands:\n"
-        help_text += "  INPUT_BOX variable_name\n"
-        help_text += '  SET_PEN_COLOR "color"\n'
-        help_text += '  SET_FILL_COLOR "color"\n'
-        help_text += '  SET_CANVAS_BG "color"\n'
-        help_text += "  FILL_RECTANGLE x, y, width, height\n"
-        help_text += "  FILL_CIRCLE x, y, radius\n"
-        help_text += "  DRAW_LINE x1, y1, x2, y2\n"
-        help_text += "  DRAW_RECTANGLE x, y, width, height\n"
-        help_text += "  DRAW_CIRCLE x, y, radius\n"
-        help_text += "  DRAW_TEXT x, y, text\n"
-        help_text += "  WAIT milliseconds\n\n"
-        help_text += "Use TOWN_HALL and INPUT_BOX to gather user input in dialogs.\n"
-        help_text += "Set canvas colors with SET_CANVAS_BG, SET_PEN_COLOR, "
-        "and SET_FILL_COLOR.\n\n"
-        help_text += "Command Reference:\n"
-        help_text += self._load_command_reference()
-        return help_text
+        return (
+            "Lake Ontario BASIC GUI IDE Help\n\n"
+            "Workflow:\n"
+            "1. Write or open a .lo script in the editor pane.\n"
+            "2. Click Run to execute the script.\n"
+            "3. Read text output in the Output tab.\n"
+            "4. View drawing commands in the Graphics tab.\n\n"
+            "Tips:\n"
+            "- Use TOWN_HALL and INPUT_BOX for interactive prompts.\n"
+            "- Use SET_CANVAS_BG, SET_PEN_COLOR, and SET_FILL_COLOR to style drawings.\n"
+            "- CLEAR_GRAPHICS resets the canvas for the next run.\n\n"
+            "Full command reference:\n\n"
+            f"{self._load_command_reference()}"
+        )
 
     def _load_command_reference(self):
+        reference_path = Path(__file__).resolve().parent.parent / "COMMANDS.md"
         try:
-            with open("COMMANDS.md", "r", encoding="utf-8") as f:
+            with open(reference_path, "r", encoding="utf-8") as f:
                 return f.read()
         except OSError:
             return "Command reference unavailable."

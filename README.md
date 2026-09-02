@@ -1,4 +1,4 @@
-# Lake Ontario BASIC
+# Lake Ontario BASIC 1.0.0
 
 **Lake Ontario BASIC** is a whimsical, and satirical programming language built in the spirit of classic BASIC — infused with politeness, progressive values, and a **fearless Honey Badger attitude** that takes zero shit from MAGA spin, GOP propaganda, or oligarch intimidation.
 
@@ -131,6 +131,10 @@ In **Lake Ontario**, alternative facts don't compile, universal healthcare prote
 8. [examples/electoral_fact_check.lo](examples/electoral_fact_check.lo): Popular vote verification and democratic audits.
 9. [examples/full_language_tour.lo](examples/full_language_tour.lo): Comprehensive tour of UBI, Unions, Science Facts, Diversity, File I/O, and `WHILE_CLASS_CONSCIOUS` loops.
 10. [examples/farcical_policy.lo](examples/farcical_policy.lo): Satirical policy calculus with apologies, maple redistribution, and protest snow forecasts.
+11. [examples/demo_new_features.lo](examples/demo_new_features.lo): Focused showcase of modern language features including `FOR_EACH`, `PERHAPS_ALSO`, string utilities, and list indexing.
+12. [examples/demo_data_analysis.lo](examples/demo_data_analysis.lo): End-to-end ward data analysis pipeline with per-capita metrics and report publication.
+13. [examples/demo_algorithms.lo](examples/demo_algorithms.lo): Classic CS patterns in Lake Ontario BASIC: Fibonacci, prime sieve, frequency counting, and subroutine grading.
+14. [examples/demo_policy_engine.lo](examples/demo_policy_engine.lo): Multi-plank policy scoring system with reusable subroutines and stress simulation.
 ---
 
 ## 4. Running Programs
@@ -217,6 +221,13 @@ Then launch it with the GUI IDE:
 lake-ontario-ide
 ```
 
+Or use the command-line tools directly:
+
+```bash
+lake-ontario-basic --help
+lake-ontario-cli
+```
+
 Or run the bundled launcher directly:
 
 ```bash
@@ -234,5 +245,28 @@ A full documentation suite is available in the `docs/` folder:
 - `docs/gui_ide_guide.md`
 - `docs/examples_guide.md`
 - `docs/developer_manual.md`
+- `CONTRIBUTING.md`
+- `CODE_OF_CONDUCT.md`
 
-These files provide user guides, reference manuals, examples, and developer extension notes.
+These files provide user guides, reference manuals, examples, community norms, and contribution guidance.
+
+## Project Principles
+
+Lake Ontario BASIC is designed to be:
+
+- playful without being cruel
+- evidence-aware rather than performatively misleading
+- educational while still being genuinely useful to experiment with
+- respectful and constructive even when the subject matter is political or satirical
+
+The goal is not to turn the project into generic parody; it is to make a weird, readable, and useful language that still respects truth, civility, and good engineering.
+
+## Contributing
+
+Contributions are welcome from civic-minded coders, language nerds, and anyone who wants to make the interpreter friendlier, clearer, or more delightfully absurd without compromising truth or respect.
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request, and review [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before joining the discussion.
+
+## License
+
+This project is released under the MIT License. See [LICENSE](LICENSE).

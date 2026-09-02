@@ -90,6 +90,28 @@
   - Draws text on the GUI canvas.
 - `WAIT milliseconds`
   - Pauses execution for the given number of milliseconds.
+- `FOR_EACH item IN collection`
+  - Iterates over each item in a list, assigning it to `item` each pass.
+- `END_EACH`
+  - Ends a `FOR_EACH` loop.
+- `PERHAPS_ALSO condition [FACT_ESTABLISHED]`
+  - Acts as an `else if` branch inside a `PERHAPS` block.
+- `BREAK_FROM_CAUCUS`
+  - Exits the innermost active loop immediately.
+- `NEXT_MOTION`
+  - Skips to the next iteration of the innermost active loop.
+- `SHOW_VARS`
+  - Prints the active variable registry for debugging and live inspection.
+- `RESET_CITIZENS`
+  - Clears all stored variables and resets the live state.
+- `APPEND_TO variable, value`
+  - Appends a value to a list-like variable.
+- `REMOVE_FROM variable, value`
+  - Removes the first matching value from a list variable.
+- `SORT_CITIZENS variable`
+  - Sorts a list-like variable in ascending order.
+- `AVERAGE_CITIZENS variable`
+  - Computes the numeric average of a list-like variable and stores it in `variable_average`.
 
 ## Built-in Functions
 
@@ -203,27 +225,12 @@
   - Converts a text value to an integer or float.
 - `TO_TEXT(value)`
   - Converts any value to its text representation.
-  - Sorts a list-like variable in ascending order.
-- `AVERAGE_CITIZENS variable`
-  - Computes the numeric average of a list-like variable and stores it in `variable_average`.
-- `SHOW_VARS`
-  - Prints the active variable registry for debugging and live inspection.
-- `RESET_CITIZENS`
-  - Clears all stored variables and resets the live state.
-- `APPEND_TO variable, value`
-  - Appends a value to a list-like variable.
-- `BREAK_FROM_CAUCUS`
-  - Exits the innermost active loop immediately.
-- `NEXT_MOTION`
-  - Skips to the next iteration of the innermost active loop.
-- `FOR_EACH item IN collection`
-  - Iterates over each item in a list, assigning it to `item` each pass.
-- `END_EACH`
-  - Ends a `FOR_EACH` loop.
-- `PERHAPS_ALSO condition [FACT_ESTABLISHED]`
-  - An `else if` branch inside a `PERHAPS` block.
-- `REMOVE_FROM variable, value`
-  - Removes the first matching value from a list variable.
+- `SORT_CITIZENS(list)`
+  - Returns a sorted copy of list values.
+- `AVERAGE_CITIZENS(list)`
+  - Returns the numeric average of list values.
+- `COLLECTIVE_APPEND(target, item)`
+  - Returns a list with item appended to target.
 
 ## Operator Aliases
 

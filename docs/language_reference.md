@@ -18,8 +18,6 @@
   - Prompts the user and stores the input.
 - `INPUT_BOX variable_name`
   - Prompts the user with a GUI input dialog and stores the response.
-- `INPUT_BOX variable_name`
-  - Prompts the user with a GUI input dialog and stores the response.
 - `PERHAPS condition FACT_ESTABLISHED`
   - Starts a conditional block.
 - `STILL_IN_DENIAL`

@@ -23,6 +23,22 @@ def _is_in_venv() -> bool:
     return sys.prefix != sys.base_prefix or "VIRTUAL_ENV" in os.environ
 
 
+def _python_can_import_package(python_executable: str | None = None) -> bool:
+    if python_executable is None:
+        python_executable = sys.executable
+
+    try:
+        result = subprocess.run(
+            [python_executable, "-c", "import lake_ontario_ide; print('ok')"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return False
+    return result.returncode == 0
+
+
 def _ensure_venv() -> None:
     if VENV_PYTHON.exists():
         return
@@ -55,7 +71,13 @@ def _install_requirements() -> None:
 
 
 def _bootstrap_if_needed() -> None:
-    if _is_in_venv():
+    if os.environ.get("LAKE_ONTARIO_BOOTSTRAPPED") == "1":
+        return
+
+    if _is_in_venv() and _python_can_import_package():
+        return
+
+    if _python_can_import_package():
         return
 
     _ensure_venv()

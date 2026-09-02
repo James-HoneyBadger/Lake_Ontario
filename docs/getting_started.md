@@ -10,6 +10,14 @@ cd Lake_Ontario
 python3 -m pip install .
 ```
 
+After installation, these console commands are available:
+
+```bash
+lake-ontario-basic --help
+lake-ontario-ide
+lake-ontario-cli
+```
+
 ## Run the interpreter
 
 To run a Lake Ontario BASIC script:
@@ -38,6 +46,8 @@ python3 interpreter.py --doctor
 python3 interpreter.py --repl
 python3 interpreter.py --check examples/hello.lo
 ```
+
+`--check` validates syntax and catches unsupported statements and duplicate line numbers.
 
 ## Run the CLI IDE
 

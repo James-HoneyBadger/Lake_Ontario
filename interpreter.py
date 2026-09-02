@@ -18,7 +18,104 @@ try:
 except ImportError:  # pragma: no cover - dependency may be absent in headless envs
     tkinter = None
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
+
+
+SUPPORTED_STATEMENT_PREFIXES = (
+    "LAND_ACKNOWLEDGEMENT ",
+    "HONEY_BADGER_DONT_CARE ",
+    "BADGER_BITE ",
+    "FAT_CATS_TAX ",
+    "DONUT_DIVIDEND ",
+    "NATIONAL_STOOGE ",
+    "GREEN_NEW_DEAL ",
+    "RHETORICAL_QUESTION ",
+    "LOONIE_LOOP ",
+    "SOCIAL_LICENSE ",
+    "ELECTORATE_PULSE ",
+    "FACT_CHECK ",
+    "BROADCAST_CBC ",
+    "TOWN_HALL ",
+    "INPUT_BOX ",
+    "FOR_EACH ",
+    "APPEND_TO ",
+    "REMOVE_FROM ",
+    "SORT_CITIZENS ",
+    "AVERAGE_CITIZENS ",
+    "SET_PEN_COLOR ",
+    "SET_FILL_COLOR ",
+    "SET_CANVAS_BG ",
+    "FILL_RECTANGLE ",
+    "FILL_CIRCLE ",
+    "WAIT ",
+    "PUBLISH_RESEARCH_FILE ",
+    "DRAW_LINE ",
+    "DRAW_RECTANGLE ",
+    "DRAW_CIRCLE ",
+    "DRAW_TEXT ",
+    "PERHAPS ",
+    "PERHAPS_ALSO ",
+    "WHILE_CLASS_CONSCIOUS ",
+    "COAST_TO_COAST ",
+    "SUBPOENA ",
+    "GOLF_VACATION ",
+    "CLIMATE_EMERGENCY ",
+)
+
+SUPPORTED_EXACT_STATEMENTS = {
+    "HONEY_BADGER_MODE",
+    "SHOW_VARS",
+    "RESET_CITIZENS",
+    "END_EACH",
+    "CLEAR_GRAPHICS",
+    "STILL_IN_DENIAL",
+    "END_PERHAPS",
+    "CONTINUE_ORGANIZING",
+    "UNIVERSAL_HEALTHCARE",
+    "NATIONAL_HEALTHCARE",
+    "EXECUTIVE_ORDER_BLOCKED",
+    "THANK_YOU_EH",
+    "BREAK_FROM_CAUCUS",
+    "NEXT_MOTION",
+    "RETURN_TO_OTTAWA",
+    "IMPEACH",
+}
+
+REPL_BLOCK_OPEN_PREFIXES = (
+    "PERHAPS ",
+    "WHILE_CLASS_CONSCIOUS ",
+    "COAST_TO_COAST ",
+    "FOR_EACH ",
+)
+
+REPL_BLOCK_OPEN_EXACT = {
+    "UNIVERSAL_HEALTHCARE",
+    "NATIONAL_HEALTHCARE",
+}
+
+REPL_BLOCK_CLOSE_EXACT = {
+    "END_PERHAPS",
+    "CONTINUE_ORGANIZING",
+    "THANK_YOU_EH",
+    "END_EACH",
+    "EXECUTIVE_ORDER_BLOCKED",
+}
+
+
+def is_supported_statement(stmt):
+    if stmt in SUPPORTED_EXACT_STATEMENTS:
+        return True
+    return any(stmt.startswith(prefix) for prefix in SUPPORTED_STATEMENT_PREFIXES)
+
+
+def repl_block_delta(stmt):
+    if stmt in REPL_BLOCK_OPEN_EXACT:
+        return 1
+    if stmt in REPL_BLOCK_CLOSE_EXACT:
+        return -1
+    if any(stmt.startswith(prefix) for prefix in REPL_BLOCK_OPEN_PREFIXES):
+        return 1
+    return 0
 
 
 class LakeOntarioInterpreterError(Exception):
@@ -1085,6 +1182,11 @@ class LakeOntarioInterpreter:
                 elif stmt == "IMPEACH":
                     print("🏛️ IMPEACHMENT EFFECTIVE: Program terminated cleanly.")
                     break
+                else:
+                    head = stmt.split()[0] if stmt.split() else stmt
+                    raise LakeOntarioInterpreterError(
+                        f"Line {self.current_line_number}: unsupported statement '{head}'"
+                    )
             except (
                 LakeOntarioInterpreterError,
                 OSError,
@@ -1113,6 +1215,7 @@ class LakeOntarioInterpreter:
 
 def validate_script(code):
     errors = []
+    seen_line_numbers = set()
     for raw_line in code.splitlines():
         stripped = raw_line.strip()
         if not stripped or stripped.startswith("EXCUSE_ME"):
@@ -1121,10 +1224,22 @@ def validate_script(code):
         match = re.match(r"^(\d+)\s+(.*)$", stripped)
         if match:
             line_number = int(match.group(1))
+            if line_number in seen_line_numbers:
+                errors.append(f"Line {line_number}: duplicate line number")
+            seen_line_numbers.add(line_number)
             stmt = match.group(2).strip()
         else:
             line_number = None
             stmt = stripped
+
+        if stmt.startswith("EXCUSE_ME"):
+            continue
+
+        if not is_supported_statement(stmt):
+            label = f"Line {line_number}" if line_number is not None else "Line ?"
+            head = stmt.split()[0] if stmt.split() else stmt
+            errors.append(f"{label}: unsupported statement '{head}'")
+            continue
 
         if stmt.startswith("FACT_CHECK"):
             if "=" not in stmt:
@@ -1172,6 +1287,9 @@ def validate_script(code):
         elif stmt.startswith("FOR_EACH ") and " IN " not in stmt:
             label = f"Line {line_number}" if line_number is not None else "Line ?"
             errors.append(f"{label}: FOR_EACH statement must include 'IN'")
+        elif stmt.startswith("APPEND_TO") and "," not in stmt:
+            label = f"Line {line_number}" if line_number is not None else "Line ?"
+            errors.append(f"{label}: APPEND_TO must separate variable and value with a comma")
         elif stmt.startswith("PERHAPS_ALSO") and not stmt[13:].strip():
             label = f"Line {line_number}" if line_number is not None else "Line ?"
             errors.append(f"{label}: PERHAPS_ALSO requires a condition")
@@ -1185,26 +1303,60 @@ def validate_script(code):
 def run_repl():
     interpreter = LakeOntarioInterpreter()
     print("Lake Ontario BASIC REPL")
-    print("Type a statement and press Enter. Type IMPEACH or EXIT to quit.\n")
+    print("Type statements and press Enter. Type IMPEACH or EXIT to quit.")
+    print("For multi-line blocks, finish with END_PERHAPS / THANK_YOU_EH / END_EACH.")
+    print("Type CANCEL to discard an incomplete block.\n")
+
+    buffer = []
+    block_depth = 0
+
     while True:
         try:
-            statement = input("lo> ")
+            prompt = "....> " if buffer else "lo> "
+            statement = input(prompt)
         except EOFError:
             print()
             break
         except KeyboardInterrupt:
+            if buffer:
+                buffer = []
+                block_depth = 0
+                print("\nIncomplete block discarded.")
+                continue
             print("\nGoodbye from Lake Ontario BASIC.")
             break
 
         statement = statement.strip()
         if not statement:
             continue
-        if statement.upper() in {"IMPEACH", "EXIT", "QUIT"}:
+
+        upper = statement.upper()
+        if not buffer and upper in {"IMPEACH", "EXIT", "QUIT"}:
             print("Goodbye from Lake Ontario BASIC.")
             break
+        if buffer and upper == "CANCEL":
+            buffer = []
+            block_depth = 0
+            print("Incomplete block discarded.")
+            continue
+
+        buffer.append(statement)
+        block_depth += repl_block_delta(statement)
+
+        if block_depth > 0:
+            continue
+        if block_depth < 0:
+            print("🚨 REPL ERROR: unmatched block terminator")
+            buffer = []
+            block_depth = 0
+            continue
+
+        script = "\n".join(buffer)
+        buffer = []
+        block_depth = 0
 
         try:
-            interpreter.load_script(statement)
+            interpreter.load_script(script)
             interpreter.run()
         except SystemExit as exc:
             if exc.code == 0:
@@ -1350,8 +1502,15 @@ def main():
             print_usage()
             sys.exit(1)
         script_path = sys.argv[2]
-        with open(script_path, "r", encoding="utf-8") as f:
-            code = f.read()
+        if not os.path.isfile(script_path):
+            print(f"Script not found: {script_path}")
+            sys.exit(1)
+        try:
+            with open(script_path, "r", encoding="utf-8") as f:
+                code = f.read()
+        except OSError as exc:
+            print(f"Unable to read script: {exc}")
+            sys.exit(1)
         errors = validate_script(code)
         if errors:
             for error in errors:
@@ -1365,8 +1524,15 @@ def main():
         sys.exit(1)
 
     script_path = sys.argv[1]
-    with open(script_path, "r", encoding="utf-8") as f:
-        code = f.read()
+    if not os.path.isfile(script_path):
+        print(f"Script not found: {script_path}")
+        sys.exit(1)
+    try:
+        with open(script_path, "r", encoding="utf-8") as f:
+            code = f.read()
+    except OSError as exc:
+        print(f"Unable to read script: {exc}")
+        sys.exit(1)
 
     errors = validate_script(code)
     if errors:

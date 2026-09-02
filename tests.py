@@ -616,6 +616,274 @@ def run_list_ops_test():
     return True
 
 
+def run_while_loop_test():
+    interpreter = LakeOntarioInterpreter()
+    script = """
+10 FACT_CHECK n = 1
+20 FACT_CHECK total = 0
+30 WHILE_CLASS_CONSCIOUS n <= 5
+40 FACT_CHECK total = total EQUAL_PAY n
+50 FACT_CHECK n = n EQUAL_PAY 1
+60 CONTINUE_ORGANIZING
+70 BROADCAST_CBC total
+""".strip()
+
+    interpreter.load_script(script)
+    output = StringIO()
+    try:
+        with contextlib.redirect_stdout(output):
+            interpreter.run()
+    except SystemExit:
+        sys.stdout.write("FAIL while-loop: interpreter exited unexpectedly\n")
+        sys.stdout.flush()
+        return False
+
+    lines = output.getvalue().splitlines()
+    if not lines or lines[-1].strip() != "15":
+        sys.stdout.write(f"FAIL while-loop: expected total 15, got {lines}\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS while-loop\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_for_step_test():
+    interpreter = LakeOntarioInterpreter()
+    script = """
+10 FACT_CHECK total = 0
+20 COAST_TO_COAST i = 2 UP_TO 10 STEP 2
+30 FACT_CHECK total = total EQUAL_PAY i
+40 THANK_YOU_EH
+50 BROADCAST_CBC total
+""".strip()
+
+    interpreter.load_script(script)
+    output = StringIO()
+    try:
+        with contextlib.redirect_stdout(output):
+            interpreter.run()
+    except SystemExit:
+        sys.stdout.write("FAIL for-step: interpreter exited unexpectedly\n")
+        sys.stdout.flush()
+        return False
+
+    lines = output.getvalue().splitlines()
+    if not lines or lines[-1].strip() != "30":
+        sys.stdout.write(f"FAIL for-step: expected total 30, got {lines}\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS for-step\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_subroutine_test():
+    interpreter = LakeOntarioInterpreter()
+    script = """
+10 FACT_CHECK x = 7
+20 SUBPOENA 100
+30 BROADCAST_CBC x
+40 IMPEACH
+100 FACT_CHECK x = x FAIR_MULTIPLIER 6
+110 RETURN_TO_OTTAWA
+""".strip()
+
+    interpreter.load_script(script)
+    output = StringIO()
+    try:
+        with contextlib.redirect_stdout(output):
+            interpreter.run()
+    except SystemExit:
+        sys.stdout.write("FAIL subroutine: interpreter exited unexpectedly\n")
+        sys.stdout.flush()
+        return False
+
+    lines = output.getvalue().splitlines()
+    if not lines or lines[0].strip() != "42":
+        sys.stdout.write(f"FAIL subroutine: expected 42, got {lines}\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS subroutine\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_healthcare_guard_test():
+    interpreter = LakeOntarioInterpreter()
+    script = """
+10 UNIVERSAL_HEALTHCARE
+20 BROADCAST_CBC "before"
+30 CLIMATE_EMERGENCY "boom"
+40 EXECUTIVE_ORDER_BLOCKED
+50 BROADCAST_CBC "after"
+""".strip()
+
+    interpreter.load_script(script)
+    output = StringIO()
+    try:
+        with contextlib.redirect_stdout(output):
+            interpreter.run()
+    except SystemExit:
+        sys.stdout.write("FAIL healthcare-guard: interpreter exited unexpectedly\n")
+        sys.stdout.flush()
+        return False
+
+    text = output.getvalue()
+    if "before" not in text or "after" not in text:
+        sys.stdout.write(f"FAIL healthcare-guard: expected before/after output, got {text}\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS healthcare-guard\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_repl_multiline_block_test():
+    import subprocess
+
+    proc = subprocess.run(
+        [sys.executable, "interpreter.py", "--repl"],
+        input=(
+            "PERHAPS EVIDENCE_BASED FACT_ESTABLISHED\n"
+            "BROADCAST_CBC \"multiline block works\"\n"
+            "END_PERHAPS\n"
+            "IMPEACH\n"
+        ),
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    output = proc.stdout + proc.stderr
+    if proc.returncode != 0 or "multiline block works" not in output:
+        sys.stdout.write("FAIL repl-multiline: block input did not execute\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS repl-multiline\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_validation_strictness_test():
+    import subprocess
+
+    duplicate_path = os.path.join("examples", "tmp_duplicate_lines.lo")
+    with open(duplicate_path, "w", encoding="utf-8") as file:
+        file.write('10 BROADCAST_CBC "a"\n10 BROADCAST_CBC "b"\n')
+
+    unknown_path = os.path.join("examples", "tmp_unknown_statement.lo")
+    with open(unknown_path, "w", encoding="utf-8") as file:
+        file.write("10 HOCKEY_STICK 7\n")
+
+    duplicate_proc = subprocess.run(
+        [sys.executable, "interpreter.py", "--check", duplicate_path],
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    duplicate_output = duplicate_proc.stdout + duplicate_proc.stderr
+
+    unknown_proc = subprocess.run(
+        [sys.executable, "interpreter.py", "--check", unknown_path],
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    unknown_output = unknown_proc.stdout + unknown_proc.stderr
+
+    os.remove(duplicate_path)
+    os.remove(unknown_path)
+
+    if duplicate_proc.returncode == 0 or "duplicate line number" not in duplicate_output:
+        sys.stdout.write("FAIL validation-strict: duplicate line numbers were not rejected\n")
+        sys.stdout.flush()
+        return False
+
+    if unknown_proc.returncode == 0 or "unsupported statement" not in unknown_output:
+        sys.stdout.write("FAIL validation-strict: unknown statement was not rejected\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS validation-strict\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_missing_file_test():
+    import subprocess
+
+    proc = subprocess.run(
+        [sys.executable, "interpreter.py", "--check", "examples/does_not_exist.lo"],
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    output = proc.stdout + proc.stderr
+    if proc.returncode == 0 or "not found" not in output.lower():
+        sys.stdout.write("FAIL missing-file: CLI did not fail cleanly for a missing script\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS missing-file\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_malformed_list_command_test():
+    import subprocess
+
+    bad_path = os.path.join("examples", "tmp_bad_list_command.lo")
+    with open(bad_path, "w", encoding="utf-8") as file:
+        file.write("10 APPEND_TO roster\n")
+
+    proc = subprocess.run(
+        [sys.executable, "interpreter.py", "--check", bad_path],
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    output = proc.stdout + proc.stderr
+    os.remove(bad_path)
+
+    if proc.returncode == 0 or "APPEND_TO" not in output.upper():
+        sys.stdout.write("FAIL malformed-list: malformed APPEND_TO command was not rejected\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS malformed-list\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_packaging_guard_test():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("run_ide_probe", "run_ide.py")
+    module = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    spec.loader.exec_module(module)
+
+    if not hasattr(module, "_python_can_import_package"):
+        sys.stdout.write("FAIL packaging-guard: launcher missing package-availability check\n")
+        sys.stdout.flush()
+        return False
+
+    result = module._python_can_import_package(sys.executable)
+    if not result:
+        sys.stdout.write("FAIL packaging-guard: project package is not importable in the active runtime\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS packaging-guard\n")
+    sys.stdout.flush()
+    return True
+
+
 if __name__ == "__main__":
     all_passed = True
     sys.stdout.write("Starting Lake Ontario BASIC interpreter tests...\n")
@@ -638,6 +906,15 @@ if __name__ == "__main__":
     all_passed = run_perhaps_also_test() and all_passed
     all_passed = run_math_and_random_test() and all_passed
     all_passed = run_list_ops_test() and all_passed
+    all_passed = run_while_loop_test() and all_passed
+    all_passed = run_for_step_test() and all_passed
+    all_passed = run_subroutine_test() and all_passed
+    all_passed = run_healthcare_guard_test() and all_passed
+    all_passed = run_repl_multiline_block_test() and all_passed
+    all_passed = run_validation_strictness_test() and all_passed
+    all_passed = run_missing_file_test() and all_passed
+    all_passed = run_malformed_list_command_test() and all_passed
+    all_passed = run_packaging_guard_test() and all_passed
 
     if all_passed:
         sys.stdout.write("\nAll tests passed.\n")

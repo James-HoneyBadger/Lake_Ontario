@@ -11,7 +11,22 @@ This documentation suite covers the Lake Ontario BASIC language, the standalone 
 - `docs/examples_guide.md` — example scripts and learning paths
 - `docs/developer_manual.md` — interpreter internals, extension points, and packaging
 - `docs/troubleshooting.md` — common errors and how to solve them
+- `CONTRIBUTING.md` — how to contribute, test changes, and propose ideas
+- `CODE_OF_CONDUCT.md` — the project’s community expectations and reporting process
 - `README.md` — main project overview and quick start
+
+## Start here
+
+If you are new to the project, begin with the main overview in [README.md](../README.md), then follow the getting-started and reference docs as needed.
+
+## Project principles
+
+The docs, examples, and community guidelines all reinforce the same shape of project culture:
+
+- keep the tone witty and memorable without becoming abusive
+- favor evidence, clarity, and traceable reasoning
+- build tools that are useful as well as funny
+- welcome contributors who want to improve the language, examples, and tooling
 
 ## CLI usage highlights
 

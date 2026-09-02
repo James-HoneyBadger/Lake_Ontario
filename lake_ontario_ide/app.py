@@ -7,99 +7,19 @@ BASIC scripts.
 """
 
 import os
-import re
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
-from interpreter import LakeOntarioInterpreter, LakeOntarioInterpreterError
+from interpreter import (
+    LakeOntarioInterpreter,
+    LakeOntarioInterpreterError,
+    validate_script as validate_script_text,
+)
 
-EXAMPLES_DIR = "examples"
-
-COMMAND_REFERENCE = """
-Lake Ontario BASIC Command Reference
-
-Statements:
-  LAND_ACKNOWLEDGEMENT "territory"
-  HONEY_BADGER_MODE
-  HONEY_BADGER_DONT_CARE "target"
-  BADGER_BITE expression
-  FACT_CHECK name = expression
-  BROADCAST_CBC expression
-  TOWN_HALL variable_name
-  PERHAPS condition FACT_ESTABLISHED
-  STILL_IN_DENIAL
-  END_PERHAPS
-  WHILE_CLASS_CONSCIOUS condition
-  CONTINUE_ORGANIZING
-  COAST_TO_COAST var = start UP_TO end [STEP step]
-  THANK_YOU_EH
-  UNIVERSAL_HEALTHCARE
-  EXECUTIVE_ORDER_BLOCKED
-  SUBPOENA line_number
-  RETURN_TO_OTTAWA
-  GOLF_VACATION seconds
-  CLIMATE_EMERGENCY message
-  IMPEACH
-  PUBLISH_RESEARCH_FILE path, content
-  FAT_CATS_TAX amount
-  DONUT_DIVIDEND amount
-  NATIONAL_STOOGE statement
-  GREEN_NEW_DEAL goal
-  RHETORICAL_QUESTION question
-  LOONIE_LOOP count
-  SOCIAL_LICENSE license_name
-  ELECTORATE_PULSE value
-  CLEAR_GRAPHICS
-  DRAW_LINE x1, y1, x2, y2
-  DRAW_RECTANGLE x, y, width, height
-  DRAW_CIRCLE x, y, radius
-  DRAW_TEXT x, y, text
-  NATIONAL_HEALTHCARE
-
-Built-in functions:
-  DEBUNK(text)
-  FACT_CHECK_CROWD(value)
-  TAX_THE_BILLIONAIRE(amount)
-  DEFUND_OLIGARCHY(amount)
-  LIVING_WAGE(hours, base_rate=25.0)
-  UNIVERSAL_BASIC_INCOME(population, grant=2000.0)
-  CARBON_OFFSET(emissions_tons)
-  CELEBRATE_DIVERSITY(*items)
-  UNIONIZE(*workers)
-  SCIENCE_FACT(topic)
-  PEER_REVIEWED_SQRT(value)
-  SCIENCE_ROUND(value, decimals=2)
-  READ_RESOURCE(path)
-  PUBLISH_RESEARCH(path, content)
-  FORMAT_CURRENCY(value)
-  CAD_CURRENCY(value)
-  HONEY_BADGER_DEBUNK(claim)
-  HONEY_BADGER_BITE(target)
-  HONEY_BADGER_STRIKE(action)
-  SAY_SORRY(message)
-  MAKE_IT_RAIN(amount)
-  PUBLIC_TRANSIT_FARE(distance, base_fare=3.50)
-  TOQUE_WARMTH(temp_celsius)
-  TRUTH_METER(claim)
-  MAKE_IT_SNOW(forecast, flakes=100)
-  COLLECTIVE_LIST(...)
-  MUTUAL_AID_REGISTRY(...)
-
-Operators:
-  WEALTH_TAX    -> -
-  EQUAL_PAY     -> +
-  PROPORTIONAL_SHARE -> /
-  FAIR_MULTIPLIER -> *
-  POWER_TO_THE_PEOPLE -> **
-  MAPLE_SYRUP   -> %
-  MOONSHOT      -> **
-
-Literals:
-  EVIDENCE_BASED        -> True
-  ALTERNATIVE_FACT      -> False
-  CLASSIFIED_MAR_A_LAGO -> None
-"""
+ROOT_DIR = Path(__file__).resolve().parent.parent
+EXAMPLES_DIR = ROOT_DIR / "examples"
 
 FARCICAL_POLICY_HELP = """
 Farcical Lake Ontario Policy Help
@@ -155,8 +75,16 @@ def pause():
 RUN_HISTORY = []
 
 
+def load_command_reference():
+    reference_path = ROOT_DIR / "COMMANDS.md"
+    try:
+        return reference_path.read_text(encoding="utf-8")
+    except OSError:
+        return "Command reference unavailable."
+
+
 def list_examples():
-    if not os.path.isdir(EXAMPLES_DIR):
+    if not EXAMPLES_DIR.is_dir():
         return []
     return sorted(
         [f for f in os.listdir(EXAMPLES_DIR) if f.endswith(".lo")],
@@ -184,107 +112,24 @@ def view_history():
 
 
 def validate_script(path):
-    errors = []
     if not os.path.exists(path):
         return [f"Script not found: {path}"]
 
     try:
         with open(path, "r", encoding="utf-8") as f:
-            raw_lines = f.readlines()
+            code = f.read()
     except OSError as exc:
         return [f"Unable to read script: {exc}"]
 
-    known_prefixes = (
-        "LAND_ACKNOWLEDGEMENT",
-        "HONEY_BADGER_MODE",
-        "HONEY_BADGER_DONT_CARE",
-        "BADGER_BITE",
-        "FACT_CHECK",
-        "BROADCAST_CBC",
-        "TOWN_HALL",
-        "INPUT_BOX",
-        "SET_PEN_COLOR",
-        "SET_FILL_COLOR",
-        "SET_CANVAS_BG",
-        "FILL_RECTANGLE",
-        "FILL_CIRCLE",
-        "DRAW_LINE",
-        "DRAW_RECTANGLE",
-        "DRAW_CIRCLE",
-        "DRAW_TEXT",
-        "WAIT",
-        "SUBPOENA",
-        "RETURN_TO_OTTAWA",
-        "GOLF_VACATION",
-        "CLIMATE_EMERGENCY",
-        "IMPEACH",
-        "FAT_CATS_TAX",
-        "DONUT_DIVIDEND",
-        "NATIONAL_STOOGE",
-        "GREEN_NEW_DEAL",
-        "RHETORICAL_QUESTION",
-        "LOONIE_LOOP",
-        "SOCIAL_LICENSE",
-        "ELECTORATE_PULSE",
-        "NATIONAL_HEALTHCARE",
-    )
-
-    for line_number, raw_line in enumerate(raw_lines, start=1):
-        stripped = raw_line.strip()
-        if not stripped or stripped.startswith("EXCUSE_ME"):
-            continue
-
-        match = re.match(r"^(\d+)\s+(.*)$", stripped)
-        stmt = match.group(2).strip() if match else stripped
-
-        if not any(
-            stmt.startswith(prefix) for prefix in known_prefixes
-        ) and stmt not in (
-            "STILL_IN_DENIAL",
-            "END_PERHAPS",
-        ):
-            head = stmt.split()[0] if stmt.split() else stmt
-            errors.append(f"Line {line_number}: unsupported statement '{head}'")
-            continue
-
-        if stmt.startswith("FACT_CHECK") and "=" not in stmt:
-            errors.append(f"Line {line_number}: FACT_CHECK statement must include '='")
-        elif stmt.startswith("COAST_TO_COAST") and " UP_TO " not in stmt:
-            errors.append(
-                f"Line {line_number}: COAST_TO_COAST statement must include 'UP_TO'"
-            )
-        elif stmt.startswith("PUBLISH_RESEARCH_FILE") and "," not in stmt:
-            errors.append(
-                f"Line {line_number}: PUBLISH_RESEARCH_FILE must separate path "
-                "and content with a comma"
-            )
-        elif stmt.startswith("SUBPOENA"):
-            target_text = stmt[9:].strip()
-            if not target_text.isdigit():
-                errors.append(
-                    f"Line {line_number}: SUBPOENA must target a numbered line"
-                )
-        elif stmt.startswith("GOLF_VACATION"):
-            value = stmt[14:].strip()
-            try:
-                float(value)
-            except ValueError:
-                errors.append(
-                    f"Line {line_number}: GOLF_VACATION requires a numeric value"
-                )
-        elif stmt.startswith("CLIMATE_EMERGENCY"):
-            if not stmt[18:].strip():
-                errors.append(
-                    f"Line {line_number}: CLIMATE_EMERGENCY requires a message"
-                )
-        elif stmt.startswith("TOWN_HALL") and not stmt[10:].strip():
-            errors.append(f"Line {line_number}: TOWN_HALL requires a variable name")
-
-    return errors
+    return validate_script_text(code)
 
 
 def choose_script():
     examples = list_examples()
+    if not examples:
+        custom = input("No bundled examples found. Enter script file path: ").strip()
+        return os.path.abspath(custom) if custom else None
+
     print("\nAvailable examples:")
     for idx, name in enumerate(examples, 1):
         print(f"  {idx}. {name}")
@@ -295,7 +140,7 @@ def choose_script():
         custom = input("Enter script file path: ").strip()
         return os.path.abspath(custom)
     if choice.isdigit() and 1 <= int(choice) <= len(examples):
-        return os.path.abspath(os.path.join(EXAMPLES_DIR, examples[int(choice) - 1]))
+        return os.path.abspath(EXAMPLES_DIR / examples[int(choice) - 1])
     return None
 
 
@@ -364,7 +209,7 @@ def run_script(path):
 
 
 def show_reference():
-    print(COMMAND_REFERENCE)
+    print(load_command_reference())
 
 
 def show_farcical_policy_help():
