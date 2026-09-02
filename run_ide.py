@@ -63,7 +63,7 @@ def _bootstrap_if_needed() -> None:
 
     env = os.environ.copy()
     env["LAKE_ONTARIO_BOOTSTRAPPED"] = "1"
-    os.execv(str(VENV_PYTHON), [str(VENV_PYTHON), str(ROOT / "run_ide.py"), *sys.argv[1:]], env)
+    os.execve(str(VENV_PYTHON), [str(VENV_PYTHON), str(ROOT / "run_ide.py"), *sys.argv[1:]], env)
 
 
 if __name__ == "__main__":
