@@ -68,6 +68,18 @@
   - Grants approval from unionized beavers and poets.
 - `ELECTORATE_PULSE value`
   - Reports mock public enthusiasm as a percentage.
+- `HEAR_HEAR expression`
+  - Adds enthusiastic parliamentary agreement to a statement.
+- `CITIZEN_PETITION expression`
+  - Files a citizen request with an unnecessarily elaborate committee.
+- `MOTION_PASSED`
+  - Announces that the public interest has prevailed.
+- `VOTE_RECORDED voter, election, choice`
+  - Stores a vote record and announces that the ballot entered the civic registry.
+- `PETITION_SIGNATURE_COLLECTED name, petition`
+  - Stores a petition signature and reports the democratic paperwork.
+- `TESTIMONY_ADDED witness, statement`
+  - Stores testimony for a public inquiry.
 - `SHOW_VARS`
   - Prints all current variables to output (useful for debugging).
 - `RESET_CITIZENS`
@@ -96,10 +108,14 @@
   - Sets the fill color for filled shapes.
 - `SET_CANVAS_BG "color"`
   - Sets the graphics canvas background color.
+- `SET_PEN_WIDTH width`
+  - Sets the stroke width used for lines and shape outlines.
 - `CLEAR_GRAPHICS`
   - Clears the GUI graphics canvas while running in the GUI IDE.
 - `DRAW_LINE x1, y1, x2, y2`
   - Draws a line on the GUI canvas.
+- `DRAW_POINT x, y`
+  - Draws a single point (dot) on the GUI canvas.
 - `DRAW_RECTANGLE x, y, width, height`
   - Draws a rectangle on the GUI canvas.
 - `FILL_RECTANGLE x, y, width, height`
@@ -108,8 +124,35 @@
   - Draws a circle on the GUI canvas.
 - `FILL_CIRCLE x, y, radius`
   - Draws a filled circle on the GUI canvas.
+- `DRAW_OVAL x1, y1, x2, y2`
+  - Draws an oval within the given bounding box.
+- `FILL_OVAL x1, y1, x2, y2`
+  - Draws a filled oval within the given bounding box.
+- `DRAW_ARC x, y, radius, start_angle, extent_angle`
+  - Draws an arc centered at `x, y` from `start_angle` for `extent_angle` degrees.
+- `DRAW_POLYGON x1, y1, x2, y2, ...`
+  - Draws an outlined polygon from a flat list of point coordinates (3+ points).
+- `FILL_POLYGON x1, y1, x2, y2, ...`
+  - Draws a filled polygon from a flat list of point coordinates (3+ points).
+- `DRAW_TRIANGLE x1, y1, x2, y2, x3, y3`
+  - Draws an outlined triangle from three points.
+- `FILL_TRIANGLE x1, y1, x2, y2, x3, y3`
+  - Draws a filled triangle from three points.
 - `DRAW_TEXT x, y, text`
   - Draws text on the GUI canvas.
+- `PLAY_TONE frequency, duration_ms`
+  - Plays a tone at `frequency` Hz for `duration_ms` milliseconds.
+- `PLAY_SOUND_FILE path`
+  - Plays an audio file (e.g. `.wav`) from disk.
+- `STOP_SOUND`
+  - Stops any sound currently playing.
+- `HONEY_BADGER_GROWL`
+  - Plays a short, gruff low tone — the Honey Badger doesn't care.
+- `TOWN_HALL_BELL`
+  - Rings a bell tone to call the room to order.
+- `STANDING_OVATION`
+  - Plays a celebratory rising flourish of tones, fit for a passed motion.
+
 
 ## Operators
 
@@ -187,3 +230,34 @@
 - `MATH_MIN(a, b, ...)` — returns the smallest of the given values.
 - `MATH_MAX(a, b, ...)` — returns the largest of the given values.
 - `RANDOM_DEMOCRACY(lo, hi)` — returns a random integer between `lo` and `hi` inclusive.
+- `PARLIAMENT_GAZETTE(title, content="")` — formats a dramatic official record for a civic event.
+- `POLL_THE_PEOPLE(question, agreement=50)` — reports a bounded public-agreement percentage and schedules a committee for everyone else.
+- `CIVIC_COMPROMISE(proposal_a, proposal_b)` — combines two proposals and refers the result to three committees.
+- `RIGGED_ELECTION_METER(claim)` — gives election claims an evidence-based credibility reading.
+- `VOTER_SUPPRESSION_ALERT(tactic)` — flags a voting barrier for access and accountability review.
+- `CORPORATE_FINE(company, violation, amount=100000)` — issues a satirical, non-negative corporate fine.
+- `WORKPLACE_SAFETY_AUDIT(workplace)` — reports the worker protections a workplace audit should include.
+- `INDIGENOUS_LAND_RETURN(territory, people)` — records a commitment to land return, consultation, and consent.
+- `RENEWABLE_ENERGY_TARGET(target_percent, year)` — reports a bounded clean-energy target for a given year.
+- `WAGE_THEFT_RECOVERY(amount)` — reports a non-negative amount returned to workers.
+- `AFFORDABLE_HOUSING_BUILT(units, location)` — celebrates a non-negative number of homes announced at a location.
+- `ACCESSIBILITY_AUDIT(building)` — reports practical access requirements for a building.
+- `ACCOMMODATION_APPROVED(request)` — affirms an approved accessibility accommodation.
+- `PUBLIC_SERVICE_WAIT(service, minutes)` — reports a non-negative public-service wait time.
+- `EMISSIONS_REDUCED(baseline, current)` — calculates a bounded percentage reduction from numeric measurements.
+- `CLIMATE_RISK_SCORE(place, score)` — reports a climate-risk score bounded to 0–100.
+- `SCIENCE_CONSENSUS(topic)` — returns a statement from the interpreter's small evidence catalog or clearly reports an unknown topic.
+- `TREATY_OBLIGATION_TRACKER(treaty)` — reports the need for ongoing treaty accountability.
+- `INDIGENOUS_CONSULTATION_REQUIRED(project)` — records the need for meaningful consultation and consent.
+- `COMMUNITY_CARE_PLAN(need, response)` — pairs a community need with a funded care response.
+- `MEDIAN_CITIZENS(values)` — returns the numeric median, or `0.0` for invalid or empty input.
+- `CITIZEN_SUM(values)` — returns the numeric sum, or `0.0` for invalid input.
+- `CITIZEN_ANY(values)` — returns whether any collection item is truthy.
+- `CITIZEN_ALL(values)` — returns whether every collection item is truthy.
+- `EVIDENCE_SCORE(claim, evidence)` — gives a deterministic evidence score based on supplied evidence items.
+- `REGISTRY_GET(registry, key, default=None)` — retrieves a registry value without raising an error for a missing key.
+- `REGISTRY_KEYS(registry)` — returns registry keys as a list.
+- `REGISTRY_VALUES(registry)` — returns registry values as a list.
+- `POLICY_SCORE(policy, criteria)` — reports a deterministic score based on the number of supplied criteria.
+- `GROUP_BY_CITIZENS(values, categories)` — groups parallel values by category and returns a dictionary.
+- `COUNT_BY_CITIZENS(values, target)` — counts values equal to a target.

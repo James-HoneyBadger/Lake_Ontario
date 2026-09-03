@@ -1,0 +1,10 @@
+10 EXCUSE_ME Community registry - grouping citizens without losing the spreadsheet
+20 LAND_ACKNOWLEDGEMENT "Traditional Territory"
+30 FACT_CHECK names = COLLECTIVE_LIST("Asha", "Ben", "Asha", "Diego")
+40 FACT_CHECK regions = COLLECTIVE_LIST("North", "South", "North", "West")
+50 FACT_CHECK by_region = GROUP_BY_CITIZENS(names, regions)
+60 BROADCAST_CBC "Citizens by region: " + by_region
+70 BROADCAST_CBC "Asha count: " + COUNT_BY_CITIZENS(names, "Asha")
+80 BROADCAST_CBC "Unicorn count: " + COUNT_BY_CITIZENS(names, "Unicorn")
+90 MOTION_PASSED
+100 IMPEACH

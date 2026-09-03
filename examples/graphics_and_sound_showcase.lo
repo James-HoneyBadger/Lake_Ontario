@@ -1,0 +1,49 @@
+10 EXCUSE_ME graphics_and_sound_showcase.lo — full suite of graphics + sound commands
+20 EXCUSE_ME Run this in the GUI IDE (lake_ontario_ide) to see the podium drawn
+30 EXCUSE_ME and hear the tones; runs silently-but-safely from the CLI too.
+40 LAND_ACKNOWLEDGEMENT "Traditional Territory"
+50 BROADCAST_CBC "=== Rally Visualizer: Graphics & Sound Showcase ==="
+
+60 BROADCAST_CBC ""
+70 BROADCAST_CBC "--- Setting the scene ---"
+80 SET_CANVAS_BG "#f4f4f4"
+90 SET_PEN_COLOR "#0b5394"
+100 SET_FILL_COLOR "#d9ead3"
+110 SET_PEN_WIDTH 3
+
+120 BROADCAST_CBC "--- Drawing the podium and banner ---"
+130 DRAW_RECTANGLE 40, 160, 220, 40
+140 FILL_RECTANGLE 40, 160, 220, 40
+150 DRAW_LINE 20, 60, 320, 60
+160 DRAW_POINT 320, 60
+170 DRAW_OVAL 250, 20, 330, 90
+180 FILL_OVAL 250, 20, 330, 90
+190 DRAW_ARC 150, 100, 60, 0, 180
+200 DRAW_POLYGON 60, 220, 100, 260, 140, 220, 100, 200
+210 FILL_POLYGON 60, 220, 100, 260, 140, 220, 100, 200
+220 DRAW_TRIANGLE 200, 260, 240, 200, 280, 260
+230 FILL_TRIANGLE 200, 260, 240, 200, 280, 260
+240 DRAW_TEXT 30, 20, "The Rally Begins!"
+
+250 BROADCAST_CBC ""
+260 BROADCAST_CBC "--- Calling the room to order ---"
+270 TOWN_HALL_BELL
+
+280 FACT_CHECK vote_share = 87.5
+290 PERHAPS vote_share >= 50 FACT_ESTABLISHED
+300 BROADCAST_CBC "MOTION PASSED with " + TO_TEXT(vote_share) + "% support!"
+310 STANDING_OVATION
+320 STILL_IN_DENIAL
+330 BROADCAST_CBC "Motion failed. Back to committee."
+340 HONEY_BADGER_GROWL
+350 END_PERHAPS
+
+360 BROADCAST_CBC ""
+370 BROADCAST_CBC "--- Extra sound cues ---"
+380 PLAY_TONE 660, 200
+390 PLAY_SOUND_FILE "cheers.wav"
+400 STOP_SOUND
+
+410 BROADCAST_CBC ""
+420 BROADCAST_CBC "=== Showcase complete. Thanks for coming out, eh! ==="
+430 IMPEACH

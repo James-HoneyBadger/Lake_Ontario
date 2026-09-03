@@ -52,14 +52,23 @@ def _install_requirements() -> None:
         raise FileNotFoundError(f"Virtual environment Python not found: {VENV_PYTHON}")
 
     print("Upgrading pip in the project virtual environment...")
-    subprocess.run([str(VENV_PYTHON), "-m", "pip", "install", "--upgrade", "pip"], check=True)
+    subprocess.run(
+        [str(VENV_PYTHON), "-m", "pip", "install", "--upgrade", "pip"], check=True
+    )
 
     if REQUIREMENTS_FILE.exists():
         print("Installing project requirements from requirements.txt...")
-        subprocess.run([str(VENV_PYTHON), "-m", "pip", "install", "-r", str(REQUIREMENTS_FILE)], check=True)
+        subprocess.run(
+            [str(VENV_PYTHON), "-m", "pip", "install", "-r", str(REQUIREMENTS_FILE)],
+            check=True,
+        )
     else:
         print("Installing the Lake Ontario project in editable mode...")
-        subprocess.run([str(VENV_PYTHON), "-m", "pip", "install", "-e", "."], check=True, cwd=str(ROOT))
+        subprocess.run(
+            [str(VENV_PYTHON), "-m", "pip", "install", "-e", "."],
+            check=True,
+            cwd=str(ROOT),
+        )
 
     print("Verifying tkinter is available inside the project environment...")
     subprocess.run(
@@ -85,7 +94,11 @@ def _bootstrap_if_needed() -> None:
 
     env = os.environ.copy()
     env["LAKE_ONTARIO_BOOTSTRAPPED"] = "1"
-    os.execve(str(VENV_PYTHON), [str(VENV_PYTHON), str(ROOT / "run_ide.py"), *sys.argv[1:]], env)
+    os.execve(
+        str(VENV_PYTHON),
+        [str(VENV_PYTHON), str(ROOT / "run_ide.py"), *sys.argv[1:]],
+        env,
+    )
 
 
 if __name__ == "__main__":
@@ -93,7 +106,7 @@ if __name__ == "__main__":
 
     try:
         from lake_ontario_ide.gui import main
-    except ModuleNotFoundError as exc:
+    except ModuleNotFoundError:
         print(
             "The project package is not available in the current environment. "
             "Attempting one final install..."

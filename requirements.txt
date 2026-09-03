@@ -2,3 +2,8 @@
 # This project currently uses the Python standard library plus Tkinter,
 # which is installed with the Python distribution on most systems.
 # Include any additional package requirements here as the project grows.
+
+# Optional: enables syntax highlighting in the Time Warp Classic-based GUI
+# IDE (lake_ontario_ide/gui_app). The IDE falls back to plain line-numbered
+# editing if this is not installed.
+pygments

@@ -74,10 +74,14 @@
   - Sets the fill color for filled shapes.
 - `SET_CANVAS_BG "color"`
   - Sets the graphics canvas background color.
+- `SET_PEN_WIDTH width`
+  - Sets the stroke width used for lines and shape outlines.
 - `CLEAR_GRAPHICS`
   - Clears the GUI graphics canvas while running in the GUI IDE.
 - `DRAW_LINE x1, y1, x2, y2`
   - Draws a line on the GUI canvas.
+- `DRAW_POINT x, y`
+  - Draws a single point (dot) on the GUI canvas.
 - `DRAW_RECTANGLE x, y, width, height`
   - Draws a rectangle on the GUI canvas.
 - `FILL_RECTANGLE x, y, width, height`
@@ -86,8 +90,34 @@
   - Draws a circle on the GUI canvas.
 - `FILL_CIRCLE x, y, radius`
   - Draws a filled circle on the GUI canvas.
+- `DRAW_OVAL x1, y1, x2, y2`
+  - Draws an oval within the given bounding box.
+- `FILL_OVAL x1, y1, x2, y2`
+  - Draws a filled oval within the given bounding box.
+- `DRAW_ARC x, y, radius, start_angle, extent_angle`
+  - Draws an arc centered at `x, y` from `start_angle` for `extent_angle` degrees.
+- `DRAW_POLYGON x1, y1, x2, y2, ...`
+  - Draws an outlined polygon from a flat list of point coordinates (3+ points).
+- `FILL_POLYGON x1, y1, x2, y2, ...`
+  - Draws a filled polygon from a flat list of point coordinates (3+ points).
+- `DRAW_TRIANGLE x1, y1, x2, y2, x3, y3`
+  - Draws an outlined triangle from three points.
+- `FILL_TRIANGLE x1, y1, x2, y2, x3, y3`
+  - Draws a filled triangle from three points.
 - `DRAW_TEXT x, y, text`
   - Draws text on the GUI canvas.
+- `PLAY_TONE frequency, duration_ms`
+  - Plays a tone at `frequency` Hz for `duration_ms` milliseconds.
+- `PLAY_SOUND_FILE path`
+  - Plays an audio file (e.g. `.wav`) from disk.
+- `STOP_SOUND`
+  - Stops any sound currently playing.
+- `HONEY_BADGER_GROWL`
+  - Plays a short, gruff low tone — the Honey Badger doesn't care.
+- `TOWN_HALL_BELL`
+  - Rings a bell tone to call the room to order.
+- `STANDING_OVATION`
+  - Plays a celebratory rising flourish of tones, fit for a passed motion.
 - `WAIT milliseconds`
   - Pauses execution for the given number of milliseconds.
 - `FOR_EACH item IN collection`
@@ -247,6 +277,30 @@
 - `EVIDENCE_BASED` -> `True`
 - `ALTERNATIVE_FACT` -> `False`
 - `CLASSIFIED_MAR_A_LAGO` -> `None`
+
+## Package entry points and launchers
+
+The project exposes the following installed entry points after installation:
+
+```bash
+python3 -m pip install -e .
+lake-ontario-ide
+lake-ontario-basic --help
+lake-ontario-cli
+```
+
+The bundled launcher also bootstraps a local `.venv` and then starts the GUI:
+
+```bash
+python3 run_ide.py
+```
+
+The classic interpreter entry point from the repository root is:
+
+```bash
+python3 interpreter.py examples/hello.lo
+python3 interpreter.py --repl
+```
 
 ## IDE
 

@@ -3,6 +3,5 @@
 
 from lake_ontario_ide.app import main
 
-
 if __name__ == "__main__":
     main()

@@ -1,0 +1,15 @@
+10 EXCUSE_ME Civic Caucus - a short tour of parliamentary absurdity
+20 LAND_ACKNOWLEDGEMENT "Traditional Territory"
+30 HONEY_BADGER_MODE
+40 BROADCAST_CBC "=== Civic Caucus Begins ==="
+50 CITIZEN_PETITION "A public library in every neighbourhood"
+60 HEAR_HEAR "Fund the public library"
+70 FACT_CHECK poll = POLL_THE_PEOPLE("Should libraries stay open late?", 87)
+80 BROADCAST_CBC poll
+90 FACT_CHECK compromise = CIVIC_COMPROMISE("More buses", "More bicycles")
+100 BROADCAST_CBC compromise
+110 FACT_CHECK gazette = PARLIAMENT_GAZETTE("Library Funding", "Approved with snacks")
+120 BROADCAST_CBC gazette
+130 MOTION_PASSED
+140 BROADCAST_CBC "=== Civic Caucus Adjourned for Donuts ==="
+150 IMPEACH

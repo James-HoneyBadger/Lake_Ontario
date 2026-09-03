@@ -2,13 +2,17 @@
 
 ## Overview
 
-The Lake Ontario BASIC GUI IDE provides an interactive environment for writing, running, and visualizing Lake Ontario BASIC scripts. It includes:
+The Lake Ontario BASIC GUI IDE is built on the [Time Warp Classic](https://github.com/James-HoneyBadger/Time_Warp_Classic)
+IDE shell, rewired to run the Lake Ontario BASIC interpreter exclusively. It includes:
 
-- code editor
+- syntax-highlighted code editor with line numbers (via Pygments, with a plain-text fallback)
 - live output console
 - graphics canvas
-- command reference and help panel
-- theme toggle
+- File / Edit / Program / Debug / Preferences / About menu bar
+- find & replace (regex-capable)
+- built-in example script loader (`examples/*.lo`)
+- script validation (Debug → Validate Script) and runtime error history
+- 9 color themes and 7 font sizes, persisted to `~/.lake_ontario_settings.json`
 
 ## Launching the GUI IDE
 
@@ -28,8 +32,10 @@ lake-ontario-ide
 
 - line numbers
 - syntax-aware style
-- save/open file support
-- run script button
+- save/open file support (`.lo` scripts)
+- Run Program button / menu item / F5 shortcut
+- undo/redo, cut/copy/paste, select all
+- find & replace with case-sensitive, whole-word, and regex options
 
 ## Graphics Commands
 
@@ -72,3 +78,10 @@ Supported GUI graphics commands:
 ## Notes
 
 The GUI IDE maintains a live graphics canvas while your script executes. If you change canvas colors mid-script, the new values apply to subsequent draw operations.
+
+## Acknowledgment
+
+The IDE shell (editor widget, themes, menus, dialogs) is adapted from
+[Time Warp Classic](https://github.com/James-HoneyBadger/Time_Warp_Classic)
+by Honey Badger Universe, reworked here to run Lake Ontario BASIC only.
+

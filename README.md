@@ -234,7 +234,25 @@ Or run the bundled launcher directly:
 python3 run_ide.py
 ```
 
+The project also supports direct script execution from the repository root:
+
+```bash
+python3 interpreter.py examples/hello.lo
+python3 interpreter.py --repl
+python3 interpreter.py --check examples/hello.lo
+```
+
 When the GUI starts, you can edit a script, run it, view output, and watch graphics appear on the canvas. The GUI also supports `TOWN_HALL` prompts in an input dialog.
+
+## Verified status
+
+The current smoke-test suite is passing with the repository’s bundled checks:
+
+```bash
+python3 tests.py
+```
+
+This confirms the interpreter, REPL, CLI flags, validation logic, and example scripts remain working as documented.
 
 ## Documentation Suite
 

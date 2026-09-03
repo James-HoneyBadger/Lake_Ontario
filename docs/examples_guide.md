@@ -37,9 +37,15 @@ A satirical policy example with apologies, redistribution, and protest forecast 
 ### `gui_demo.lo`
 A GUI-specific demo illustrating canvas drawing, input boxes, and graphics commands.
 
+### `graphics_and_sound_showcase.lo`
+A rally-visualizer demo covering the full graphics suite (points, ovals, arcs,
+polygons, triangles, pen width) plus the sound suite (`PLAY_TONE`,
+`PLAY_SOUND_FILE`, `STOP_SOUND`, and the themed `HONEY_BADGER_GROWL` /
+`TOWN_HALL_BELL` / `STANDING_OVATION` cues).
+
 ## Learning path
 
 1. Start with `hello.lo` to confirm the interpreter works.
 2. Explore `honey_badger_mode.lo` and `progressive_canada.lo` for domain flavor.
 3. Use `full_language_tour.lo` to see advanced control flow.
-4. Try `gui_demo.lo` in the GUI IDE for graphics commands.
+4. Try `gui_demo.lo` and `graphics_and_sound_showcase.lo` in the GUI IDE for graphics and sound commands.

@@ -1,0 +1,9 @@
+10 EXCUSE_ME Committee chaos - a registry, a score, and no actual chaos
+20 LAND_ACKNOWLEDGEMENT "Traditional Territory"
+30 FACT_CHECK priorities = MUTUAL_AID_REGISTRY(housing=250, transit=80, libraries=40)
+40 BROADCAST_CBC "Departments: " + REGISTRY_KEYS(priorities)
+50 BROADCAST_CBC "Budgets: " + REGISTRY_VALUES(priorities)
+60 BROADCAST_CBC "Missing department: " + REGISTRY_GET(priorities, "dignity", "still under review")
+70 BROADCAST_CBC POLICY_SCORE("People First", REGISTRY_KEYS(priorities))
+80 MOTION_PASSED
+90 IMPEACH

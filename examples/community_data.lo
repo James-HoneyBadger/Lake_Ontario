@@ -1,0 +1,10 @@
+10 EXCUSE_ME Community data - numbers, evidence, and a committee for every spreadsheet
+20 LAND_ACKNOWLEDGEMENT "Traditional Territory"
+30 FACT_CHECK attendance = COLLECTIVE_LIST(42, 58, 61, 39)
+40 BROADCAST_CBC "Median attendance: " + MEDIAN_CITIZENS(attendance)
+50 BROADCAST_CBC "Total attendance: " + CITIZEN_SUM(attendance)
+60 BROADCAST_CBC EVIDENCE_SCORE("The town hall was packed", attendance)
+70 BROADCAST_CBC "Any turnout? " + CITIZEN_ANY(attendance)
+80 BROADCAST_CBC "All turnout reports filed? " + CITIZEN_ALL(COLLECTIVE_LIST(True, True, True))
+90 MOTION_PASSED
+100 IMPEACH
