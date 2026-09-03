@@ -18,7 +18,7 @@ try:
 except ImportError:  # pragma: no cover - dependency may be absent in headless envs
     tkinter = None
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 
 SUPPORTED_STATEMENT_PREFIXES = (

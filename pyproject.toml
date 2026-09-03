@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lake-ontario-ide"
-version = "1.0.0"
+version = "1.1.0"
 description = "Standalone Lake Ontario BASIC IDE and interpreter package."
 readme = "README.md"
 license = { text = "MIT" }
