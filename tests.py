@@ -1814,6 +1814,136 @@ def run_repl_file_commands_test():
     return True
 
 
+def run_coalition_test():
+    """COALITION runs the first matching PLANK, else MINORITY_REPORT, else nothing."""
+    interpreter = LakeOntarioInterpreter()
+    script = """
+10 FACT_CHECK vote_share = 62.5
+20 COALITION vote_share
+30 PLANK >= 80
+40 BROADCAST_CBC "FAIL: supermajority ran"
+50 PLANK >= 60
+60 BROADCAST_CBC "minority government"
+70 PLANK >= 40
+80 BROADCAST_CBC "FAIL: opposition ran"
+90 MINORITY_REPORT
+100 BROADCAST_CBC "FAIL: default ran"
+110 END_COALITION
+120 FACT_CHECK riding = "North"
+130 COALITION riding
+140 PLANK "South"
+150 BROADCAST_CBC "FAIL: south ran"
+160 PLANK "North"
+170 BROADCAST_CBC "north riding"
+180 END_COALITION
+190 FACT_CHECK level = 12
+200 COALITION level
+210 PLANK >= 90
+220 BROADCAST_CBC "FAIL: top ran"
+230 MINORITY_REPORT
+240 BROADCAST_CBC "default branch reached"
+250 END_COALITION
+260 FACT_CHECK seats = 7
+270 COALITION seats
+280 PLANK 338
+290 BROADCAST_CBC "FAIL: full house ran"
+300 END_COALITION
+310 BROADCAST_CBC "case closed"
+""".strip()
+
+    interpreter.load_script(script)
+    output = StringIO()
+    with contextlib.redirect_stdout(output):
+        interpreter.run()
+    result = output.getvalue()
+
+    checks = [
+        ("first match wins", "minority government" in result),
+        ("string equality", "north riding" in result),
+        ("default branch", "default branch reached" in result),
+        ("no-match fallthrough", "case closed" in result),
+        ("no stray branches", "FAIL:" not in result),
+    ]
+    for label, ok in checks:
+        if not ok:
+            sys.stdout.write(f"FAIL coalition: {label} misbehaved\n{result}\n")
+            sys.stdout.flush()
+            return False
+
+    repl = subprocess.run(
+        [sys.executable, "interpreter.py", "--repl"],
+        input=(
+            "FACT_CHECK gauge = 2\n"
+            "COALITION gauge\n"
+            "PLANK 1\n"
+            'BROADCAST_CBC "one"\n'
+            "PLANK 2\n"
+            'BROADCAST_CBC "two"\n'
+            "END_COALITION\n"
+            "IMPEACH\n"
+        ),
+        text=True,
+        capture_output=True,
+        timeout=30,
+        env={
+            **os.environ,
+            "LAKE_ONTARIO_REPL_HISTORY": os.path.join(_temp_dir(), "coalition_hist"),
+        },
+    )
+    if repl.returncode != 0 or "two" not in repl.stdout or "one" in repl.stdout:
+        sys.stdout.write(
+            f"FAIL coalition: REPL handling misbehaved\n{repl.stdout}{repl.stderr}\n"
+        )
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS coalition\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_coalition_validation_test():
+    """PLANK/MINORITY_REPORT outside a COALITION, and dead planks, are reported."""
+    cases = {
+        "orphan_plank.lo": ("10 PLANK 1\n", "no COALITION block"),
+        "dead_plank.lo": (
+            "10 COALITION 5\n20 MINORITY_REPORT\n30 PLANK 1\n40 END_COALITION\n",
+            "can never be reached",
+        ),
+        "double_default.lo": (
+            "10 COALITION 5\n20 MINORITY_REPORT\n30 MINORITY_REPORT\n"
+            "40 END_COALITION\n",
+            "appears twice",
+        ),
+        "unclosed.lo": (
+            "10 COALITION 5\n20 PLANK 1\n30 BROADCAST_CBC \"x\"\n",
+            "never reaches END_COALITION",
+        ),
+        "bare.lo": ("10 COALITION\n20 END_COALITION\n", "requires an argument"),
+    }
+    for name, (source, expected) in cases.items():
+        path = os.path.join(_temp_dir(), name)
+        with open(path, "w", encoding="utf-8") as file:
+            file.write(source)
+        proc = subprocess.run(
+            [sys.executable, "interpreter.py", "--check", path],
+            text=True,
+            capture_output=True,
+            timeout=20,
+        )
+        output = proc.stdout + proc.stderr
+        if proc.returncode == 0 or expected not in output:
+            sys.stdout.write(
+                f"FAIL coalition-validation: {name} not reported\n{output}\n"
+            )
+            sys.stdout.flush()
+            return False
+
+    sys.stdout.write("PASS coalition-validation\n")
+    sys.stdout.flush()
+    return True
+
+
 if __name__ == "__main__":
     all_passed = True
     sys.stdout.write("Starting Lake Ontario BASIC interpreter tests...\n")
@@ -1869,6 +1999,8 @@ if __name__ == "__main__":
     all_passed = run_broadcast_rendering_test() and all_passed
     all_passed = run_evidence_log_test() and all_passed
     all_passed = run_repl_file_commands_test() and all_passed
+    all_passed = run_coalition_test() and all_passed
+    all_passed = run_coalition_validation_test() and all_passed
 
     if all_passed:
         sys.stdout.write("\nAll tests passed.\n")

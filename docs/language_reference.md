@@ -26,6 +26,16 @@
   - Starts the `else` branch of a conditional block.
 - `END_PERHAPS`
   - Ends a conditional block.
+- `COALITION expression`
+  - Examines a value once and runs the first matching `PLANK` branch.
+- `PLANK value`
+  - A branch of the enclosing `COALITION`, matched by equality.
+- `PLANK >= value` (also `<=`, `==`, `!=`, `>`, `<`)
+  - A branch matched by comparison, for banded decisions.
+- `MINORITY_REPORT`
+  - Default branch of a `COALITION` when no `PLANK` matches.
+- `END_COALITION`
+  - Closes a `COALITION` block.
 - `WHILE_CLASS_CONSCIOUS condition`
   - Starts a while loop.
 - `CONTINUE_ORGANIZING`
@@ -182,6 +192,26 @@ zero raises an error with the source line instead of quietly evaluating to a
 placeholder. In the default mode, an undeclared name still reads as `0` (the
 classic BASIC courtesy); inside `HONEY_BADGER_MODE` (or with the `--strict`
 flag) it becomes an error.
+
+## Coalition blocks
+
+`COALITION` examines a value once and runs the first branch that matches, which
+is handy for banded policy decisions:
+
+```lo
+COALITION vote_share
+PLANK >= 60
+    BROADCAST_CBC "Minority government"
+PLANK >= 40
+    BROADCAST_CBC "Official opposition"
+MINORITY_REPORT
+    BROADCAST_CBC "No confidence"
+END_COALITION
+```
+
+A `PLANK` with no operator matches by equality (`PLANK "North"`). Comparison
+planks are checked in the order written, so put the strictest band first. If
+nothing matches and there is no `MINORITY_REPORT`, the whole block is skipped.
 
 ## Literals
 

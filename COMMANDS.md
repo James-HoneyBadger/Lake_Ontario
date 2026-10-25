@@ -23,6 +23,16 @@
   - Starts the `else` branch of a conditional block.
 - `END_PERHAPS`
   - Ends a conditional block.
+- `COALITION expression`
+  - Examines a value once and runs the first matching `PLANK` branch.
+- `PLANK value`
+  - A branch of the enclosing `COALITION`, matched by equality.
+- `PLANK >= value` (also `<=`, `==`, `!=`, `>`, `<`)
+  - A branch matched by comparison, for banded decisions.
+- `MINORITY_REPORT`
+  - Default branch of a `COALITION` when no `PLANK` matches.
+- `END_COALITION`
+  - Closes a `COALITION` block.
 - `WHILE_CLASS_CONSCIOUS condition`
   - Starts a while loop.
 - `CONTINUE_ORGANIZING`

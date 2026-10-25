@@ -49,7 +49,9 @@ source expression attached; they never silently return a placeholder.
 - `closing` — opener index to matching closer index (`PERHAPS`/`END_PERHAPS`,
   `WHILE_CLASS_CONSCIOUS`/`CONTINUE_ORGANIZING`, `COAST_TO_COAST`/`THANK_YOU_EH`,
   `FOR_EACH`/`END_EACH`, healthcare openers/`EXECUTIVE_ORDER_BLOCKED`)
-- `branches` — the `PERHAPS_ALSO` / `STILL_IN_DENIAL` chain for each `PERHAPS`
+- `branches` — the branch chain for each block that has one:
+  `PERHAPS_ALSO` / `STILL_IN_DENIAL` for `PERHAPS`, and `PLANK` /
+  `MINORITY_REPORT` for `COALITION`
 - `owner` — the owning `PERHAPS` for each branch marker
 - `problems` — unmatched openers and stray closers, reused by `validate_script`
 
@@ -71,6 +73,13 @@ it without bound, and `RESET_CITIZENS` clears it along with the registry.
 statements to a file), alongside `HISTORY`, `REPLAY N`, `!N`, `SHOW_VARS`,
 `SHOW_EVIDENCE_LOG`, and `CANCEL`. When stdin is a terminal, `readline`
 provides arrow-key history and Tab completion of keywords and built-ins.
+
+`COALITION` resolves its branches at the opener: `_enter_coalition` walks the
+chain once, asking `_plank_matches` whether each `PLANK` matches (equality, or a
+leading `>=` / `<=` / `==` / `!=` / `>` / `<`), and returns the winning body or
+the end of the block. A `PLANK` reached in sequence means an earlier branch
+already ran, so it jumps to the end. `build_block_layout` reports planks that
+follow a `MINORITY_REPORT` (unreachable) and duplicate defaults.
 
 Other control flow:
 

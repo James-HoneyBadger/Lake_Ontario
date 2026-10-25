@@ -24,6 +24,10 @@ In **Lake Ontario**, alternative facts don't compile, universal healthcare prote
 | `FACT_ESTABLISHED` | `THEN` | Executes block if condition holds up under scrutiny. |
 | `STILL_IN_DENIAL` | `ELSE` | Fallback branch when alternative facts collapse. |
 | `END_PERHAPS` | `END IF` | Closes conditional block. |
+| `COALITION` | `SELECT CASE` | Examines a value once and runs the first matching `PLANK`. |
+| `PLANK` | `CASE` | A branch of a `COALITION`, matched by equality or a comparison. |
+| `MINORITY_REPORT` | `CASE ELSE` | Default branch when no `PLANK` matches. |
+| `END_COALITION` | `END SELECT` | Closes a `COALITION` block. |
 | `COAST_TO_COAST` | `FOR ... UP_TO` | Loop iterating across values/provinces (supports `STEP`). |
 | `THANK_YOU_EH` | `NEXT` | Ends loop iteration politely. |
 | `WHILE_CLASS_CONSCIOUS` | `WHILE` | Loop executing while class awareness persists. |
@@ -143,6 +147,9 @@ In **Lake Ontario**, alternative facts don't compile, universal healthcare prote
 20. [examples/policy_standard_library.lo](examples/policy_standard_library.lo): Election meters, corporate fines, safety audits, land return, and energy targets.
 21. [examples/string_and_loops.lo](examples/string_and_loops.lo): String trimming, casing, casting, and loop control.
 22. [examples/worker_services.lo](examples/worker_services.lo): Wage theft recovery, housing, accessibility, and service waits.
+23. [examples/coalition_case.lo](examples/coalition_case.lo): `COALITION` / `PLANK` decision making with comparison bands and a `MINORITY_REPORT` fallback.
+24. [examples/gui_demo.lo](examples/gui_demo.lo): Canvas drawing, `INPUT_BOX` prompts, and colour commands for the GUI IDE.
+25. [examples/graphics_and_sound_showcase.lo](examples/graphics_and_sound_showcase.lo): The full graphics and sound suite, from arcs and polygons to themed tone cues.
 ---
 
 ## 4. Running Programs
@@ -300,7 +307,7 @@ The current smoke-test suite is passing with the repository’s bundled checks:
 
 ```bash
 python3 -m pip install flake8 pytest   # dev tooling, once
-python3 tests.py        # 53 checks
+python3 tests.py        # 55 checks
 python3 -m pytest -q    # same checks, pytest entry point
 python3 -m flake8 .     # style audit
 ```

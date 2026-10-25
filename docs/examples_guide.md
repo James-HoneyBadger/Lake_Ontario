@@ -43,6 +43,10 @@ polygons, triangles, pen width) plus the sound suite (`PLAY_TONE`,
 `PLAY_SOUND_FILE`, `STOP_SOUND`, and the themed `HONEY_BADGER_GROWL` /
 `TOWN_HALL_BELL` / `STANDING_OVATION` cues).
 
+### `coalition_case.lo`
+`COALITION` / `PLANK` / `MINORITY_REPORT` decision making: comparison bands on a
+vote share, string equality on a riding name, and a no-match fallthrough.
+
 ### `demo_algorithms.lo`
 Classic computer science in a civic accent: Fibonacci, a prime sieve,
 frequency counting, and a `SUBPOENA` grading subroutine.

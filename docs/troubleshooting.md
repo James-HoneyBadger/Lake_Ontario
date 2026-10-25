@@ -62,6 +62,21 @@ Fix:
 - every `FOR_EACH` ends with `END_EACH`
 - remove stray terminators left behind by an edit
 
+## 2b2. `COALITION` branch problems
+
+Error:
+
+```text
+Line 30: this PLANK comes after MINORITY_REPORT and can never be reached
+Line 10: PLANK has no COALITION block to belong to
+```
+
+Fix:
+- put `MINORITY_REPORT` last; it is the default, so any `PLANK` after it is dead
+- a `PLANK` outside a `COALITION` belongs to no motion — check the block nesting
+- comparison planks are checked in order, so list the strictest band first
+- `COALITION` needs a value to examine, and `PLANK` needs something to compare
+
 ## 2c. Undeclared names in `HONEY_BADGER_MODE`
 
 Error:

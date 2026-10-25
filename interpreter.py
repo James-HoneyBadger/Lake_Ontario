@@ -80,6 +80,8 @@ SUPPORTED_STATEMENT_PREFIXES = (
     "PLAY_SOUND_FILE ",
     "PERHAPS ",
     "PERHAPS_ALSO ",
+    "COALITION ",
+    "PLANK ",
     "WHILE_CLASS_CONSCIOUS ",
     "COAST_TO_COAST ",
     "SUBPOENA ",
@@ -96,6 +98,8 @@ SUPPORTED_EXACT_STATEMENTS = {
     "CLEAR_GRAPHICS",
     "STILL_IN_DENIAL",
     "END_PERHAPS",
+    "MINORITY_REPORT",
+    "END_COALITION",
     "CONTINUE_ORGANIZING",
     "UNIVERSAL_HEALTHCARE",
     "NATIONAL_HEALTHCARE",
@@ -114,6 +118,7 @@ SUPPORTED_EXACT_STATEMENTS = {
 
 REPL_BLOCK_OPEN_PREFIXES = (
     "PERHAPS ",
+    "COALITION ",
     "WHILE_CLASS_CONSCIOUS ",
     "COAST_TO_COAST ",
     "FOR_EACH ",
@@ -126,6 +131,7 @@ REPL_BLOCK_OPEN_EXACT = {
 
 REPL_BLOCK_CLOSE_EXACT = {
     "END_PERHAPS",
+    "END_COALITION",
     "CONTINUE_ORGANIZING",
     "THANK_YOU_EH",
     "END_EACH",
@@ -171,6 +177,10 @@ EXPRESSION_KEYWORDS = (
     ("NOT", "not"),
 )
 
+KNOWN_KEYWORD_NAMES = frozenset(
+    prefix.strip() for prefix in SUPPORTED_STATEMENT_PREFIXES
+)
+
 KNOWN_STATEMENT_NAMES = tuple(
     sorted(
         {prefix.strip() for prefix in SUPPORTED_STATEMENT_PREFIXES}
@@ -201,6 +211,7 @@ def find_function_calls(stmt):
 
 BLOCK_CLOSERS = {
     "perhaps": "END_PERHAPS",
+    "coalition": "END_COALITION",
     "while": "CONTINUE_ORGANIZING",
     "for": "THANK_YOU_EH",
     "foreach": "END_EACH",
@@ -209,6 +220,7 @@ BLOCK_CLOSERS = {
 
 BLOCK_LABELS = {
     "perhaps": "PERHAPS",
+    "coalition": "COALITION",
     "while": "WHILE_CLASS_CONSCIOUS",
     "for": "COAST_TO_COAST",
     "foreach": "FOR_EACH",
@@ -221,6 +233,8 @@ HEALTHCARE_OPENERS = ("UNIVERSAL_HEALTHCARE", "NATIONAL_HEALTHCARE")
 def _block_opener(stmt):
     if stmt.startswith("PERHAPS "):
         return "perhaps"
+    if stmt.startswith("COALITION "):
+        return "coalition"
     if stmt.startswith("WHILE_CLASS_CONSCIOUS "):
         return "while"
     if stmt.startswith("COAST_TO_COAST "):
@@ -281,6 +295,39 @@ def build_block_layout(lines):
             else:
                 layout.report(
                     line_number, f"{marker} has no PERHAPS block to belong to"
+                )
+            continue
+
+        if stmt.startswith("COALITION "):
+            stack.append(("coalition", index))
+            layout.branches[index] = []
+            continue
+
+        if stmt.startswith("PLANK ") or stmt == "MINORITY_REPORT":
+            marker = "PLANK" if stmt.startswith("PLANK ") else "MINORITY_REPORT"
+            if stack and stack[-1][0] == "coalition":
+                opener_index = stack[-1][1]
+                chain = layout.branches[opener_index]
+                if marker == "MINORITY_REPORT" and any(
+                    kind == "MINORITY_REPORT" for kind, _ in chain
+                ):
+                    layout.report(
+                        line_number,
+                        "MINORITY_REPORT appears twice in the same COALITION",
+                    )
+                if marker == "PLANK" and any(
+                    kind == "MINORITY_REPORT" for kind, _ in chain
+                ):
+                    layout.report(
+                        line_number,
+                        "this PLANK comes after MINORITY_REPORT and can never be "
+                        "reached",
+                    )
+                chain.append((marker, index))
+                layout.owner[index] = opener_index
+            else:
+                layout.report(
+                    line_number, f"{marker} has no COALITION block to belong to"
                 )
             continue
 
@@ -1195,6 +1242,28 @@ LO_EVAL_GLOBALS = {
 LO_RESERVED_NAMES = frozenset(("and", "or", "not")) | frozenset(LO_EVAL_GLOBALS)
 
 
+COMPARISON_OPERATORS = (">=", "<=", "==", "!=", ">", "<")
+
+
+def _compare_values(left, right, operator):
+    if operator == "==":
+        return left == right
+    if operator == "!=":
+        return left != right
+    try:
+        if operator == ">=":
+            return left >= right
+        if operator == "<=":
+            return left <= right
+        if operator == ">":
+            return left > right
+        return left < right
+    except TypeError:
+        raise LakeOntarioInterpreterError(
+            f"cannot compare {left!r} with {right!r} using {operator}"
+        ) from None
+
+
 _UNSET = object()
 
 EVIDENCE_LOG_LIMIT = 200
@@ -1867,6 +1936,16 @@ class LakeOntarioInterpreter:
                     self.pc = self._skip_to_block_end(self.pc - 1)
                 elif stmt == "END_PERHAPS":
                     pass
+                elif stmt.startswith("COALITION "):
+                    subject = self.evaluate_expression(_statement_arg(stmt))
+                    self.pc = self._enter_coalition(subject, self.pc - 1)
+                elif stmt.startswith("PLANK "):
+                    # Reached in sequence: an earlier plank already matched.
+                    self.pc = self._skip_to_block_end(self.pc - 1)
+                elif stmt == "MINORITY_REPORT":
+                    self.pc = self._skip_to_block_end(self.pc - 1)
+                elif stmt == "END_COALITION":
+                    pass
                 elif stmt.startswith("WHILE_CLASS_CONSCIOUS "):
                     cond_expr = _statement_arg(stmt)
                     if self.evaluate_expression(cond_expr):
@@ -2007,6 +2086,10 @@ class LakeOntarioInterpreter:
                     break
                 else:
                     head = stmt.split()[0] if stmt.split() else stmt
+                    if head in KNOWN_KEYWORD_NAMES:
+                        raise LakeOntarioInterpreterError(
+                            f"{head} requires an argument"
+                        )
                     raise LakeOntarioInterpreterError(
                         f"unsupported statement '{head}'"
                     )
@@ -2077,6 +2160,30 @@ class LakeOntarioInterpreter:
         print(f"🧾 EVIDENCE LOG: {count} entr{'y' if count == 1 else 'ies'} on record")
         for record in self._evidence_log_lines():
             print(f"  {record}")
+
+    def _enter_coalition(self, subject, opener_index):
+        """Run the first PLANK that matches, else MINORITY_REPORT, else skip."""
+        for marker, index in self.block_layout.branches.get(opener_index, []):
+            if marker == "MINORITY_REPORT":
+                return index + 1
+            if self._plank_matches(subject, self.lines[index][1]):
+                return index + 1
+        return self.block_layout.close_of(opener_index, len(self.lines)) + 1
+
+    def _plank_matches(self, subject, plank_stmt):
+        argument = _statement_arg(plank_stmt)
+        for operator in COMPARISON_OPERATORS:
+            if not argument.startswith(operator):
+                continue
+            target = self.evaluate_expression(argument[len(operator) :])
+            try:
+                return _compare_values(subject, target, operator)
+            except TypeError:
+                raise LakeOntarioInterpreterError(
+                    f"PLANK {argument} cannot be compared with "
+                    f"{type(subject).__name__} value {subject!r}"
+                ) from None
+        return subject == self.evaluate_expression(argument)
 
     def _next_perhaps_branch(self, opener_index):
         """Resolve a failed PERHAPS: next PERHAPS_ALSO, the else branch, or the end."""
@@ -2205,10 +2312,13 @@ def validate_script(code):
         label = _line_label(line_number)
         if not is_supported_statement(stmt):
             head = stmt.split()[0] if stmt.split() else stmt
-            errors.append(
-                f"{label}: unsupported statement '{head}'"
-                f"{suggest_correction(head, KNOWN_STATEMENT_NAMES)}"
-            )
+            if head in KNOWN_KEYWORD_NAMES:
+                errors.append(f"{label}: {head} requires an argument")
+            else:
+                errors.append(
+                    f"{label}: unsupported statement '{head}'"
+                    f"{suggest_correction(head, KNOWN_STATEMENT_NAMES)}"
+                )
             continue
         errors.extend(_check_statement_shape(label, stmt))
 
@@ -2271,6 +2381,10 @@ def print_repl_help():
     print("  PERHAPS condition FACT_ESTABLISHED")
     print("  STILL_IN_DENIAL      Else branch in a PERHAPS block")
     print("  END_PERHAPS          Close a PERHAPS block")
+    print("  COALITION expression")
+    print("  PLANK value          Branch matched by equality or comparison")
+    print("  MINORITY_REPORT      Default COALITION branch")
+    print("  END_COALITION        Close a COALITION block")
     print("  COAST_TO_COAST var = start UP_TO end [STEP step]")
     print("  THANK_YOU_EH         Close a FOR loop")
     print("  FOR_EACH item IN list")

@@ -1,0 +1,39 @@
+10 EXCUSE_ME   coalition_case.lo - COALITION / PLANK decision making
+20 EXCUSE_ME   Demonstrates: COALITION / PLANK / MINORITY_REPORT, comparison
+30 EXCUSE_ME   planks (>= and ==), string equality, and no-match fallthrough.
+40 LAND_ACKNOWLEDGEMENT "Traditional Territory"
+50 BROADCAST_CBC "=== Coalition Case Study ==="
+
+60 FACT_CHECK vote_share = 62.5
+70 BROADCAST_CBC "Vote share on the record: " + TO_TEXT(vote_share) + "%"
+80 COALITION vote_share
+90 PLANK >= 80
+100     BROADCAST_CBC "SUPERMAJORITY: a mandate with a mandate on top."
+110 PLANK >= 60
+120     BROADCAST_CBC "MINORITY GOVERNMENT: 62.5% is an instruction, not a suggestion."
+130 PLANK >= 40
+140     BROADCAST_CBC "OFFICIAL OPPOSITION: close enough to form a committee."
+150 MINORITY_REPORT
+160     BROADCAST_CBC "NO CONFIDENCE: back to the electorate."
+170 END_COALITION
+
+180 FACT_CHECK riding = "North"
+190 COALITION riding
+200 PLANK "South"
+210     BROADCAST_CBC "SOUTH RIDING: the library reopens on Monday."
+220 PLANK "North"
+230     BROADCAST_CBC "NORTH RIDING: the library never closed."
+240 MINORITY_REPORT
+250     BROADCAST_CBC "UNKNOWN RIDING: somebody misplaced the map."
+260 END_COALITION
+
+270 FACT_CHECK seats_won = 7
+280 COALITION seats_won
+290 PLANK 338
+300     BROADCAST_CBC "FULL HOUSE: 338 seats, all accounted for."
+310 END_COALITION
+320 BROADCAST_CBC "No plank matched 7, so the motion quietly died."
+
+330 BROADCAST_CBC "=== Case closed, eh ==="
+340 SHOW_EVIDENCE_LOG
+350 IMPEACH
