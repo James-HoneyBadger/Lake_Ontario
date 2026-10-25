@@ -21,6 +21,11 @@ try:
 except ImportError:  # pragma: no cover - dependency may be absent in headless envs
     tkinter = None
 
+try:
+    import readline  # noqa: F401 - enables REPL history and tab completion
+except ImportError:  # pragma: no cover - absent on some platforms
+    readline = None
+
 __version__ = "1.2.0"
 
 
@@ -61,6 +66,7 @@ SUPPORTED_STATEMENT_PREFIXES = (
     "FILL_TRIANGLE ",
     "WAIT ",
     "PUBLISH_RESEARCH_FILE ",
+    "PUBLISH_EVIDENCE_LOG ",
     "DRAW_LINE ",
     "DRAW_RECTANGLE ",
     "DRAW_CIRCLE ",
@@ -84,6 +90,7 @@ SUPPORTED_STATEMENT_PREFIXES = (
 SUPPORTED_EXACT_STATEMENTS = {
     "HONEY_BADGER_MODE",
     "SHOW_VARS",
+    "SHOW_EVIDENCE_LOG",
     "RESET_CITIZENS",
     "END_EACH",
     "CLEAR_GRAPHICS",
@@ -1188,6 +1195,11 @@ LO_EVAL_GLOBALS = {
 LO_RESERVED_NAMES = frozenset(("and", "or", "not")) | frozenset(LO_EVAL_GLOBALS)
 
 
+_UNSET = object()
+
+EVIDENCE_LOG_LIMIT = 200
+
+
 def _statement_arg(stmt):
     """Return the text after a statement's keyword, without magic offsets."""
     _, _, rest = stmt.partition(" ")
@@ -1232,6 +1244,7 @@ class LakeOntarioInterpreter:
         self.vote_records = []
         self.petition_signatures = []
         self.testimonies = []
+        self.evidence_log = []
 
     def run_statement(self, statement):
         self.load_script(statement)
@@ -1504,11 +1517,16 @@ class LakeOntarioInterpreter:
                     )
                 elif stmt.startswith("FACT_CHECK "):
                     body = _statement_arg(stmt)
-                    if "=" in body:
-                        var_name, val_expr = body.split("=", 1)
-                        self.variables[var_name.strip()] = self.evaluate_expression(
-                            val_expr
+                    if "=" not in body:
+                        raise LakeOntarioInterpreterError(
+                            "FACT_CHECK needs 'name = expression'"
                         )
+                    var_name, val_expr = body.split("=", 1)
+                    var_name = var_name.strip()
+                    previous = self.variables.get(var_name, _UNSET)
+                    value = self.evaluate_expression(val_expr)
+                    self.variables[var_name] = value
+                    self._record_evidence(var_name, previous, value)
                 elif stmt.startswith("BROADCAST_CBC "):
                     val_expr = _statement_arg(stmt)
                     val = self.evaluate_expression(val_expr)
@@ -1551,8 +1569,29 @@ class LakeOntarioInterpreter:
                     self.vote_records.clear()
                     self.petition_signatures.clear()
                     self.testimonies.clear()
+                    self.evidence_log.clear()
                     print(
                         "🧹 CITIZEN REGISTER RESET: all values cleared, democracy restored to baseline."
+                    )
+                elif stmt == "SHOW_EVIDENCE_LOG":
+                    self._print_evidence_log()
+                elif stmt.startswith("PUBLISH_EVIDENCE_LOG "):
+                    path = str(self.evaluate_expression(_statement_arg(stmt)))
+                    if not path:
+                        raise LakeOntarioInterpreterError(
+                            "PUBLISH_EVIDENCE_LOG requires a file path"
+                        )
+                    entries = len(self.evidence_log)
+                    try:
+                        with open(path, "w", encoding="utf-8") as handle:
+                            handle.write(self._evidence_log_text())
+                    except OSError as exc:
+                        raise LakeOntarioInterpreterError(
+                            f"PUBLISH_EVIDENCE_LOG could not write '{path}': {exc}"
+                        ) from None
+                    print(
+                        f"📄 Evidence log published to {path} "
+                        f"({entries} entr{'y' if entries == 1 else 'ies'})."
                     )
                 elif stmt.startswith("FOR_EACH "):
                     # FOR_EACH item IN collection
@@ -2000,6 +2039,45 @@ class LakeOntarioInterpreter:
             opener_index = marker_index
         return self.block_layout.close_of(opener_index, len(self.lines)) + 1
 
+    def _record_evidence(self, name, previous, value):
+        """Journal every FACT_CHECK, flagging amendments to earlier evidence."""
+        self.evidence_log.append(
+            {
+                "line": self.current_line_number,
+                "name": name,
+                "previous": None if previous is _UNSET else previous,
+                "value": value,
+                "amended": previous is not _UNSET and previous != value,
+            }
+        )
+        if len(self.evidence_log) > EVIDENCE_LOG_LIMIT:
+            del self.evidence_log[0]
+
+    def _evidence_log_lines(self):
+        lines = []
+        for entry in self.evidence_log:
+            line_tag = f"line {entry['line']}" if entry["line"] is not None else "line ?"
+            record = f"{line_tag}: {entry['name']} = {entry['value']}"
+            if entry["amended"]:
+                record += f" (amended; was {entry['previous']})"
+            lines.append(record)
+        return lines
+
+    def _evidence_log_text(self):
+        header = ["Lake Ontario BASIC evidence log", "-" * 32]
+        return "\n".join(header + self._evidence_log_lines()) + "\n"
+
+    def _print_evidence_log(self):
+        if not self.evidence_log:
+            print(
+                "🧾 EVIDENCE LOG: empty, like a committee that has not yet met."
+            )
+            return
+        count = len(self.evidence_log)
+        print(f"🧾 EVIDENCE LOG: {count} entr{'y' if count == 1 else 'ies'} on record")
+        for record in self._evidence_log_lines():
+            print(f"  {record}")
+
     def _next_perhaps_branch(self, opener_index):
         """Resolve a failed PERHAPS: next PERHAPS_ALSO, the else branch, or the end."""
         for marker, index in self.block_layout.branches.get(opener_index, []):
@@ -2182,6 +2260,10 @@ def print_repl_help():
     print("  REPLAY N             Replay a numbered REPL command")
     print("  !N                  Shortcut replay command")
     print("  SHOW_VARS            Display the current variable registry")
+    print("  SHOW_EVIDENCE_LOG    Display the FACT_CHECK evidence journal")
+    print("  RUN path.lo          Validate and run a script in this session")
+    print("  CHECK path.lo        Validate a script without running it")
+    print("  SAVE path.lo         Write this session as a runnable script")
     print("  RESET / CLEAR        Clear all variables")
     print("  RESET_CITIZENS       Clear all variables")
     print("  IMPEACH / EXIT / QUIT  Exit the REPL")
@@ -2194,9 +2276,109 @@ def print_repl_help():
     print("  FOR_EACH item IN list")
     print("  END_EACH             Close a FOR_EACH loop")
     print()
+    print("Tab completion covers keywords and built-ins.")
+    print()
     print("Example:")
     print("  FACT_CHECK total = 2 EQUAL_PAY 3")
     print("  BROADCAST_CBC total")
+    print("  RUN examples/hello.lo")
+
+
+REPL_FILE_COMMANDS = {"RUN", "CHECK", "SAVE"}
+
+REPL_ONLY_COMMANDS = {
+    "HELP",
+    "?",
+    "HISTORY",
+    "REPLAY",
+    "RESET",
+    "CLEAR",
+    "RESET_CITIZENS",
+    "CANCEL",
+    "EXIT",
+    "QUIT",
+    "IMPEACH",
+} | REPL_FILE_COMMANDS
+
+
+def _setup_repl_readline():
+    """Give the REPL arrow-key history and Tab completion when a terminal allows it."""
+    if readline is None or not sys.stdin.isatty():
+        return
+
+    completions = sorted(
+        set(KNOWN_STATEMENT_NAMES)
+        | set(LO_BUILTINS)
+        | REPL_ONLY_COMMANDS
+        | {"EVIDENCE_BASED", "ALTERNATIVE_FACT", "CLASSIFIED_MAR_A_LAGO"}
+    )
+
+    def completer(text, state):
+        matches = [word for word in completions if word.startswith(text.upper())]
+        return matches[state] if state < len(matches) else None
+
+    readline.set_completer(completer)
+    readline.set_completer_delims(" \t\n")
+    readline.parse_and_bind("tab: complete")
+
+
+def _is_script_statement(entry):
+    if entry.startswith("!"):
+        return False
+    return entry.split(" ", 1)[0].upper() not in REPL_ONLY_COMMANDS
+
+
+def _save_repl_session(path, history):
+    entries = [entry for entry in history if _is_script_statement(entry)]
+    if not entries:
+        print("🚨 REPL ERROR: nothing to save yet, eh.")
+        return
+    try:
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write("\n".join(entries) + "\n")
+    except OSError as exc:
+        print(f"🚨 REPL ERROR: could not save {path}: {exc}")
+        return
+    print(f"💾 Saved {len(entries)} statement(s) to {path}")
+
+
+def _handle_repl_file_command(statement, interpreter, history):
+    """Handle RUN / CHECK / SAVE. Returns True when the input was consumed."""
+    keyword, _, argument = statement.partition(" ")
+    keyword = keyword.upper()
+    if keyword not in REPL_FILE_COMMANDS:
+        return False
+
+    argument = argument.strip()
+    if not argument:
+        print(f"🚨 REPL ERROR: {keyword} needs a file path")
+        return True
+
+    if keyword == "SAVE":
+        _save_repl_session(argument, history)
+        return True
+
+    code = _read_script(argument)
+    if code is None:
+        return True
+
+    errors = validate_script(code)
+    if errors:
+        for error in errors:
+            print(error)
+        return True
+
+    if keyword == "CHECK":
+        print(f"📜 {argument} validated. The record holds, eh.")
+        return True
+
+    print(f"▶ Running {argument}...")
+    interpreter.load_script(code)
+    try:
+        interpreter.run()
+    except LakeOntarioRuntimeError as exc:
+        print(f"🚨 REPL ERROR: {exc}")
+    return True
 
 
 def run_repl(trace=False, strict=False):
@@ -2207,6 +2389,8 @@ def run_repl(trace=False, strict=False):
     print("Type statements and press Enter. Type IMPEACH or EXIT to quit.")
     print("For multi-line blocks, finish with END_PERHAPS / THANK_YOU_EH / END_EACH.")
     print("Type CANCEL to discard an incomplete block. Type HELP for commands.\n")
+
+    _setup_repl_readline()
 
     buffer = []
     block_depth = 0
@@ -2281,6 +2465,8 @@ def run_repl(trace=False, strict=False):
             statement = history[replay_index - 1]
             print(f"↩ replaying: {statement}")
             upper = statement.upper()
+        if not buffer and _handle_repl_file_command(statement, interpreter, history):
+            continue
         if not buffer and upper in {"IMPEACH", "EXIT", "QUIT"}:
             print("Goodbye from Lake Ontario BASIC.")
             break

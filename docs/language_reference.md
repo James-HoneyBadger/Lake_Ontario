@@ -76,6 +76,10 @@
   - Files a citizen request with an unnecessarily elaborate committee.
 - `MOTION_PASSED`
   - Announces that the public interest has prevailed.
+- `SHOW_EVIDENCE_LOG`
+  - Prints the evidence journal: every `FACT_CHECK`, with amendments flagged.
+- `PUBLISH_EVIDENCE_LOG "path"`
+  - Writes the evidence journal to a file as an auditable record.
 - `VOTE_RECORDED voter, election, choice`
   - Stores a vote record and announces that the ballot entered the civic registry.
 - `PETITION_SIGNATURE_COLLECTED name, petition`

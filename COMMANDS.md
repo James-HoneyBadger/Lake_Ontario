@@ -59,6 +59,10 @@
   - Files testimony and opens a fresh binder.
 - `MOTION_PASSED`
   - Confirms that the public interest defeated administrative fog.
+- `SHOW_EVIDENCE_LOG`
+  - Prints the evidence journal: every `FACT_CHECK`, with amendments flagged.
+- `PUBLISH_EVIDENCE_LOG "path"`
+  - Writes the evidence journal to a file as an auditable record.
 
 ### Farcical Policy Statements
 - `FAT_CATS_TAX amount`

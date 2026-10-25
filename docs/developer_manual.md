@@ -55,6 +55,23 @@ source expression attached; they never silently return a placeholder.
 
 The run loop jumps with that table instead of rescanning for block ends.
 
+### Evidence log
+
+`self.evidence_log` journals every `FACT_CHECK` as
+`{line, name, previous, value, amended}`. Amendments (a re-assignment that
+changes an existing value) set `amended` so `SHOW_EVIDENCE_LOG` and
+`PUBLISH_EVIDENCE_LOG` can flag them. The journal is capped at
+`EVIDENCE_LOG_LIMIT` entries (oldest dropped first) so a long loop cannot grow
+it without bound, and `RESET_CITIZENS` clears it along with the registry.
+
+### REPL
+
+`run_repl` supports `RUN path.lo` (validate and execute in-session),
+`CHECK path.lo` (validate only), and `SAVE path.lo` (write the session's script
+statements to a file), alongside `HISTORY`, `REPLAY N`, `!N`, `SHOW_VARS`,
+`SHOW_EVIDENCE_LOG`, and `CANCEL`. When stdin is a terminal, `readline`
+provides arrow-key history and Tab completion of keywords and built-ins.
+
 Other control flow:
 
 - subroutines: `SUBPOENA` / `RETURN_TO_OTTAWA`

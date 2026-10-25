@@ -143,6 +143,18 @@ To exit:
 - or `EXIT`
 - or `QUIT`
 
+Useful REPL commands:
+
+- `RUN path.lo` — validate and run a script without leaving the prompt
+- `CHECK path.lo` — validate only
+- `SAVE path.lo` — write the session as a runnable script
+- `SHOW_EVIDENCE_LOG` — review every `FACT_CHECK`, including amendments
+- `CANCEL` — discard a half-typed block
+
+If `RUN` complains that the script is missing, check the path relative to the
+directory you launched the REPL from. If `SAVE` produces an empty file, there
+were no script statements in history yet — REPL-only commands are excluded.
+
 ## 7. Interpreter crashes
 
 If the runtime raises a `CLIMATE_EMERGENCY` or another error:

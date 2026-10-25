@@ -1731,6 +1731,89 @@ def run_broadcast_rendering_test():
     return True
 
 
+def run_evidence_log_test():
+    """Every FACT_CHECK is journaled, amendments are flagged, and the log ships."""
+    interpreter = LakeOntarioInterpreter()
+    log_path = os.path.join(_temp_dir(), "evidence.log")
+    script = f"""
+10 FACT_CHECK x = 3
+20 FACT_CHECK x = 5
+30 FACT_CHECK motto = "evidence"
+40 SHOW_EVIDENCE_LOG
+50 PUBLISH_EVIDENCE_LOG "{log_path}"
+""".strip()
+
+    interpreter.load_script(script)
+    output = StringIO()
+    with contextlib.redirect_stdout(output):
+        interpreter.run()
+    printed = output.getvalue()
+
+    if "amended; was 3" not in printed:
+        sys.stdout.write(f"FAIL evidence-log: amendment not flagged\n{printed}\n")
+        sys.stdout.flush()
+        return False
+
+    with open(log_path, "r", encoding="utf-8") as handle:
+        published = handle.read()
+    expected = ["Lake Ontario BASIC evidence log", "line 10: x = 3", "line 20: x = 5"]
+    if not all(snippet in published for snippet in expected):
+        sys.stdout.write(f"FAIL evidence-log: published log incomplete\n{published}\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS evidence-log\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_repl_file_commands_test():
+    """RUN, CHECK, and SAVE work from inside the REPL."""
+    script_path = os.path.join(_temp_dir(), "repl_target.lo")
+    with open(script_path, "w", encoding="utf-8") as file:
+        file.write('10 BROADCAST_CBC "repl ran the file"\n')
+
+    saved_path = os.path.join(_temp_dir(), "saved_session.lo")
+    proc = subprocess.run(
+        [sys.executable, "interpreter.py", "--repl"],
+        input=(
+            f"CHECK {script_path}\n"
+            f"RUN {script_path}\n"
+            "FACT_CHECK saved_value = 41 EQUAL_PAY 1\n"
+            f"SAVE {saved_path}\n"
+            "IMPEACH\n"
+        ),
+        text=True,
+        capture_output=True,
+        timeout=30,
+        env={
+            **os.environ,
+            "LAKE_ONTARIO_REPL_HISTORY": os.path.join(_temp_dir(), "repl_history"),
+        },
+    )
+    output = proc.stdout + proc.stderr
+    if "validated" not in output or "repl ran the file" not in output:
+        sys.stdout.write(f"FAIL repl-files: CHECK/RUN misbehaved\n{output}\n")
+        sys.stdout.flush()
+        return False
+
+    if not os.path.exists(saved_path):
+        sys.stdout.write(f"FAIL repl-files: SAVE did not write {saved_path}\n")
+        sys.stdout.flush()
+        return False
+
+    with open(saved_path, "r", encoding="utf-8") as handle:
+        saved = handle.read()
+    if "saved_value" not in saved:
+        sys.stdout.write(f"FAIL repl-files: session statements missing\n{saved}\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS repl-files\n")
+    sys.stdout.flush()
+    return True
+
+
 if __name__ == "__main__":
     all_passed = True
     sys.stdout.write("Starting Lake Ontario BASIC interpreter tests...\n")
@@ -1784,6 +1867,8 @@ if __name__ == "__main__":
     all_passed = run_trace_mode_test() and all_passed
     all_passed = run_doctor_tolerance_test() and all_passed
     all_passed = run_broadcast_rendering_test() and all_passed
+    all_passed = run_evidence_log_test() and all_passed
+    all_passed = run_repl_file_commands_test() and all_passed
 
     if all_passed:
         sys.stdout.write("\nAll tests passed.\n")

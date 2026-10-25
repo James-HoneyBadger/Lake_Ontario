@@ -184,6 +184,23 @@ python3 interpreter.py --strict examples/hello.lo
 - `--strict` starts in `HONEY_BADGER_MODE`, where citing an undeclared name is
   an error rather than `0`.
 
+### Evidence log
+
+Every `FACT_CHECK` is journaled. `SHOW_EVIDENCE_LOG` prints the record and
+`PUBLISH_EVIDENCE_LOG "path"` writes it to disk, flagging amended values:
+
+```lo
+10 FACT_CHECK turnout = 42
+20 FACT_CHECK turnout = 58
+30 SHOW_EVIDENCE_LOG
+```
+
+```text
+🧾 EVIDENCE LOG: 2 entries on record
+  line 10: turnout = 42
+  line 20: turnout = 58 (amended; was 42)
+```
+
 ## 4a. Interactive REPL
 
 Try the live interpreter prompt for quick experiments:
@@ -206,6 +223,21 @@ lo> BROADCAST_CBC total
 lo> IMPEACH
 Goodbye from Lake Ontario BASIC.
 ```
+
+REPL helpers:
+
+| Command | Purpose |
+| :--- | :--- |
+| `HELP` | List REPL commands |
+| `HISTORY` / `REPLAY N` / `!N` | Review and replay recent input |
+| `RUN path.lo` | Validate and run a script in the current session |
+| `CHECK path.lo` | Validate a script without running it |
+| `SAVE path.lo` | Write this session as a runnable script |
+| `SHOW_VARS` / `SHOW_EVIDENCE_LOG` | Inspect the registry and the evidence journal |
+| `CANCEL` | Discard an unfinished multi-line block |
+| `IMPEACH` / `EXIT` / `QUIT` | Leave the REPL |
+
+Tab completion and arrow-key history are available in a terminal.
 
 ## 5. IDE and Command Reference
 
@@ -268,14 +300,14 @@ The current smoke-test suite is passing with the repository’s bundled checks:
 
 ```bash
 python3 -m pip install flake8 pytest   # dev tooling, once
-python3 tests.py        # 51 checks
+python3 tests.py        # 53 checks
 python3 -m pytest -q    # same checks, pytest entry point
 python3 -m flake8 .     # style audit
 ```
 
 This confirms the interpreter, REPL, CLI flags, validation logic, error
-reporting, strict mode, audit trail, and example scripts remain working as
-documented. Continuous integration runs the same checks on Python 3.11, 3.12,
+reporting, strict mode, audit trail, evidence log, and example scripts remain
+working as documented. Continuous integration runs the same checks on Python 3.11, 3.12,
 and 3.13.
 
 ## Documentation Suite
