@@ -15,11 +15,13 @@ from pathlib import Path
 from interpreter import (
     LakeOntarioInterpreter,
     LakeOntarioInterpreterError,
+    resource_dir,
+    resource_file,
     validate_script as validate_script_text,
 )
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-EXAMPLES_DIR = ROOT_DIR / "examples"
+EXAMPLES_DIR = Path(resource_dir("examples"))
 
 FARCICAL_POLICY_HELP = """
 Farcical Lake Ontario Policy Help
@@ -76,7 +78,7 @@ RUN_HISTORY = []
 
 
 def load_command_reference():
-    reference_path = ROOT_DIR / "COMMANDS.md"
+    reference_path = Path(resource_file("COMMANDS.md"))
     try:
         return reference_path.read_text(encoding="utf-8")
     except OSError:
@@ -116,7 +118,7 @@ def validate_script(path):
         return [f"Script not found: {path}"]
 
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, "r", encoding="utf-8-sig") as f:
             code = f.read()
     except OSError as exc:
         return [f"Unable to read script: {exc}"]
@@ -184,7 +186,7 @@ def run_script(path):
             return
 
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, "r", encoding="utf-8-sig") as f:
             code = f.read()
     except OSError as exc:
         print(f"Unable to read script: {exc}")

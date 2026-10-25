@@ -57,7 +57,9 @@
 - `IMPEACH`
   - Terminates program execution.
 - `PUBLISH_RESEARCH_FILE path, content`
-  - Writes content to disk as a report.
+  - Writes content to disk as a report. Raises an error (catchable with
+    `UNIVERSAL_HEALTHCARE`) when the file cannot be written; it never claims
+    success on a failed write.
 - `HEAR_HEAR point`
   - Records a point the chamber reluctantly agrees with.
 - `CITIZEN_PETITION text`
@@ -74,6 +76,16 @@
   - Prints the evidence journal: every `FACT_CHECK`, with amendments flagged.
 - `PUBLISH_EVIDENCE_LOG "path"`
   - Writes the evidence journal to a file as an auditable record.
+
+### Comments
+
+`EXCUSE_ME` starts a comment. It may own a whole line or trail a statement;
+text inside string literals is never treated as a comment.
+
+```lo
+10 EXCUSE_ME a whole-line comment
+20 BROADCAST_CBC "Evidence, eh" EXCUSE_ME and a trailing one
+```
 
 ### Farcical Policy Statements
 - `FAT_CATS_TAX amount`
@@ -281,7 +293,8 @@
 - `STR_SPLIT(text, delimiter)`
   - Splits text into a list on the given delimiter.
 - `TO_NUMBER(text)`
-  - Converts a text value to an integer or float.
+  - Converts a text value to an integer or float. Text that is not numeric
+    yields `0`.
 - `TO_TEXT(value)`
   - Converts any value to its text representation.
 - `SORT_CITIZENS(list)`

@@ -1,4 +1,4 @@
-# Lake Ontario BASIC 1.2.0
+# Lake Ontario BASIC 1.3.0
 
 **Lake Ontario BASIC** is a whimsical, and satirical programming language built in the spirit of classic BASIC — infused with politeness, progressive values, and a **fearless Honey Badger attitude** that takes zero shit from MAGA spin, GOP propaganda, or oligarch intimidation.
 
@@ -12,7 +12,7 @@ In **Lake Ontario**, alternative facts don't compile, universal healthcare prote
 
 | Lake Ontario Keyword | BASIC Equivalent | Description |
 | :--- | :--- | :--- |
-| `EXCUSE_ME` | `REM` | Polite comment marker. |
+| `EXCUSE_ME` | `REM` | Polite comment marker; may also trail a statement. |
 | `LAND_ACKNOWLEDGEMENT` | `INIT` / `HEADER` | Mandatory respectful header for all scripts. |
 | `HONEY_BADGER_MODE` | `PRAGMA` / `STRICT` | Activates zero-fear, take-no-shit execution mode — and strict evidence rules, so citing an undeclared name is an error. |
 | `HONEY_BADGER_DONT_CARE` | `IGNORE_WARNING` | Dismisses bad-faith lawsuits and intimidation attempts. |
@@ -182,6 +182,7 @@ python3 interpreter.py --repl
 python3 interpreter.py --check examples/hello.lo
 python3 interpreter.py --trace examples/hello.lo
 python3 interpreter.py --strict examples/hello.lo
+python3 interpreter.py --max-steps 100000 examples/hello.lo
 ```
 
 - `--check` audits a script without running it: statement spelling,
@@ -192,6 +193,8 @@ python3 interpreter.py --strict examples/hello.lo
 - `--trace` prints an `AUDIT TRAIL` line before every executed statement.
 - `--strict` starts in `HONEY_BADGER_MODE`, where citing an undeclared name is
   an error rather than `0`.
+- `--max-steps N` stops after N statements with a clear error, which turns a
+  runaway loop into a diagnosis instead of a hang.
 
 ### Evidence log
 
@@ -274,6 +277,10 @@ The standalone IDE can be installed as a Python package from this repository:
 python3 -m pip install .
 ```
 
+The install ships the 25 examples, `COMMANDS.md`, and the docs alongside the
+modules, so `lake-ontario-basic --list-examples` and the IDE's example menu work
+outside the checkout too.
+
 Then launch it with the GUI IDE:
 
 ```bash
@@ -309,14 +316,15 @@ The current smoke-test suite is passing with the repository’s bundled checks:
 
 ```bash
 python3 -m pip install flake8 pytest   # dev tooling, once
-python3 tests.py        # 56 checks
+python3 tests.py        # 58 checks
 python3 -m pytest -q    # same checks, pytest entry point
 python3 -m flake8 .     # style audit
 ```
 
 This confirms the interpreter, REPL, CLI flags, validation logic, error
-reporting, strict mode, audit trail, evidence log, and example scripts remain
-working as documented. Continuous integration runs the same checks on Python 3.11, 3.12,
+reporting, strict mode, audit trail, evidence log, runaway-loop guard, and
+example scripts remain working as documented. Continuous integration also
+builds and installs the wheel to prove the packaged examples are reachable. Continuous integration runs the same checks on Python 3.11, 3.12,
 and 3.13.
 
 ## Documentation Suite

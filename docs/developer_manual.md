@@ -13,10 +13,12 @@
 - `pyproject.toml` — package metadata and entry point.
 - `tests.py` — regression harness (the single source of truth for checks).
 - `test_harness.py` — pytest bridge that collects the same harness functions.
-- `examples/` — sample Lake Ontario BASIC scripts.
+- `examples/` — sample Lake Ontario BASIC scripts (installed as package data).
 - `COMMANDS.md` — language command reference.
 - `README.md` — project overview and quick start.
-- `.github/workflows/ci.yml` — lint, compile, doctor, example validation, tests.
+- `.github/workflows/ci.yml` — lint, compile, doctor, example validation, tests,
+  and a wheel build that installs the package and checks the shipped examples.
+- `MANIFEST.in` — keeps examples, docs, and the command reference in the sdist.
 
 ## Interpreter internals
 
@@ -74,6 +76,10 @@ statements to a file), alongside `HISTORY`, `REPLAY N`, `!N`, `SHOW_VARS`,
 `SHOW_EVIDENCE_LOG`, and `CANCEL`. When stdin is a terminal, `readline`
 provides arrow-key history and Tab completion of keywords and built-ins.
 
+Bundled resources are found by `resource_dir(name)` / `resource_file(name)`,
+which check the checkout first and then the installed
+`share/lake-ontario-basic/` data directory.
+
 `analyze_script(code)` returns `(errors, warnings)`, while `validate_script`
 keeps returning errors only. Warnings are advisory: `--check`, the GUI's
 Validate dialog, and the REPL's `CHECK` show them, and they never change an exit
@@ -91,6 +97,14 @@ leading `>=` / `<=` / `==` / `!=` / `>` / `<`), and returns the winning body or
 the end of the block. A `PLANK` reached in sequence means an earlier branch
 already ran, so it jumps to the end. `build_block_layout` reports planks that
 follow a `MINORITY_REPORT` (unreachable) and duplicate defaults.
+
+### Statement dispatch
+
+`run()` owns the loop, the trace printer, the statement budget, and the error
+policy; the statement handlers live in `_dispatch(stmt)`, which returns `False`
+only for `IMPEACH`. Loop and healthcare stacks are instance state
+(`self._loop_stack`, `self._healthcare_stack`) so the handlers can reach them.
+A keyword → handler table is the next step if the chain grows further.
 
 Other control flow:
 

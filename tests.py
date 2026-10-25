@@ -14,6 +14,13 @@ from interpreter import (
     LakeOntarioRuntimeError,
 )
 
+# Every REPL run in this suite keeps its history in the temp directory rather
+# than dropping .lake_ontario_history into the checkout.
+os.environ.setdefault(
+    "LAKE_ONTARIO_REPL_HISTORY",
+    os.path.join(tempfile.gettempdir(), f"lake_ontario_history_{os.getpid()}"),
+)
+
 TEST_SCRIPTS = {
     "hello.lo": [
         "🍁 LAND ACKNOWLEDGEMENT",
@@ -71,6 +78,10 @@ def _temp_dir():
     global _TEMP_DIR
     if _TEMP_DIR is None:
         _TEMP_DIR = tempfile.mkdtemp(prefix="lake_ontario_tests_")
+        # Keep REPL history out of the working tree for every child process.
+        os.environ.setdefault(
+            "LAKE_ONTARIO_REPL_HISTORY", os.path.join(_TEMP_DIR, "repl_history")
+        )
     return _TEMP_DIR
 
 
@@ -450,7 +461,7 @@ def run_string_operations_test():
         "hello, comrade!" in result,
         "Hello, Comrade!" in result,
         "15" in result,
-        "True" in result,
+        "EVIDENCE_BASED" in result,
         "Greetings" in result,
         "42" in result,
         "99" in result,
@@ -635,7 +646,7 @@ def run_citizen_data_library_test():
     with contextlib.redirect_stdout(output):
         interpreter.run()
     result = output.getvalue()
-    expected = ["25.0", "100.0", "True", "100/100", "committee requests sources"]
+    expected = ["25.0", "100.0", "EVIDENCE_BASED", "100/100", "committee requests sources"]
     if not all(item in result for item in expected):
         sys.stdout.write("FAIL citizen-data: collection functions failed\n")
         sys.stdout.flush()
@@ -1285,6 +1296,12 @@ def run_repl_history_reset_test():
         text=True,
         capture_output=True,
         timeout=20,
+        env={
+            **os.environ,
+            "LAKE_ONTARIO_REPL_HISTORY": os.path.join(
+                _temp_dir(), "history_" + "run_repl_history_reset_test"
+            ),
+        },
     )
     output = proc.stdout.lower()
     if proc.returncode != 0:
@@ -1978,13 +1995,14 @@ def run_coalition_advisory_test():
     ordered = os.path.join(_temp_dir(), "ordered_planks.lo")
     with open(ordered, "w", encoding="utf-8") as file:
         file.write(
-            "10 COALITION x\n"
-            "20 PLANK >= 80\n"
-            "30 PLANK >= 60\n"
-            "40 PLANK >= 40\n"
-            "50 PLANK <= 10\n"
-            "60 PLANK \"North\"\n"
-            "70 END_COALITION\n"
+            '10 LAND_ACKNOWLEDGEMENT "Traditional Territory"\n'
+            "20 COALITION x\n"
+            "30 PLANK >= 80\n"
+            "40 PLANK >= 60\n"
+            "50 PLANK >= 40\n"
+            "60 PLANK <= 10\n"
+            "70 PLANK \"North\"\n"
+            "80 END_COALITION\n"
         )
     proc = subprocess.run(
         [sys.executable, "interpreter.py", "--check", ordered],
@@ -2017,6 +2035,129 @@ def run_coalition_advisory_test():
         return False
 
     sys.stdout.write("PASS coalition-advisory\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_unit_helpers_test():
+    """Direct unit checks for the pure helpers behind validation and rendering."""
+    import interpreter as module
+
+    failures = []
+
+    def check(label, actual, expected):
+        if actual != expected:
+            failures.append(f"{label}: expected {expected!r}, got {actual!r}")
+
+    check("statement_arg", module._statement_arg("DRAW_TEXT 1, 2, hi"), "1, 2, hi")
+    check("strip_inline_comment", module.strip_inline_comment('X 1 EXCUSE_ME why'), "X 1")
+    check(
+        "literal EXCUSE_ME preserved",
+        module.strip_inline_comment('BROADCAST_CBC "EXCUSE_ME"'),
+        'BROADCAST_CBC "EXCUSE_ME"',
+    )
+    check(
+        "coverage >=",
+        module._plank_coverage("PLANK >= 60"),
+        ("numeric", 60.0, True, float("inf"), True),
+    )
+    check("coverage text", module._plank_coverage('PLANK "North"'), ("text", "North"))
+    check("coverage variable", module._plank_coverage("PLANK >= limit"), None)
+    check(
+        "merge coverage",
+        module._merge_coverage(
+            [
+                (10, ("numeric", 40.0, True, float("inf"), True)),
+                (20, ("numeric", 60.0, True, float("inf"), True)),
+            ]
+        ),
+        [(("numeric", 40.0, True, float("inf"), True), [10, 20])],
+    )
+    check(
+        "exclusive inside inclusive",
+        module._shadowing_line(
+            ("numeric", 60.0, False, float("inf"), True),
+            [(10, ("numeric", 60.0, True, float("inf"), True))],
+        ),
+        10,
+    )
+    check(
+        "inclusive not inside exclusive",
+        module._shadowing_line(
+            ("numeric", 60.0, True, float("inf"), True),
+            [(10, ("numeric", 60.0, False, float("inf"), True))],
+        ),
+        None,
+    )
+    check(
+        "render bool",
+        module._render_broadcast(True),
+        "EVIDENCE_BASED",
+    )
+    check("render none", module._render_broadcast(None), "CLASSIFIED_MAR_A_LAGO")
+    check("render float noise", module._render_broadcast(0.1 + 0.2), "0.3")
+    check("render float", module._render_broadcast(62.5), "62.5")
+    check(
+        "render dict",
+        module._render_broadcast({"housing": 250}),
+        "{housing: 250}",
+    )
+
+    layout = module.build_block_layout(
+        [
+            (10, "PERHAPS x FACT_ESTABLISHED"),
+            (20, "BROADCAST_CBC 1"),
+            (30, "END_PERHAPS"),
+        ]
+    )
+    check("block closing", layout.closing.get(0), 2)
+    check("block no problems", layout.problems, [])
+
+    if failures:
+        sys.stdout.write("FAIL unit-helpers:\n  " + "\n  ".join(failures) + "\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS unit-helpers\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_runaway_guard_test():
+    """--max-steps stops a runaway loop instead of hanging forever."""
+    path = os.path.join(_temp_dir(), "runaway.lo")
+    with open(path, "w", encoding="utf-8") as file:
+        file.write(
+            "10 FACT_CHECK i = 0\n"
+            "20 WHILE_CLASS_CONSCIOUS EVIDENCE_BASED\n"
+            "30 FACT_CHECK i = i EQUAL_PAY 1\n"
+            "40 CONTINUE_ORGANIZING\n"
+        )
+
+    guarded = subprocess.run(
+        [sys.executable, "interpreter.py", "--max-steps", "500", path],
+        text=True,
+        capture_output=True,
+        timeout=30,
+    )
+    output = guarded.stdout + guarded.stderr
+    if guarded.returncode == 0 or "stopped the debate after 500" not in output:
+        sys.stdout.write(f"FAIL runaway-guard: budget not enforced\n{output}\n")
+        sys.stdout.flush()
+        return False
+
+    bad = subprocess.run(
+        [sys.executable, "interpreter.py", "--max-steps", "banana", path],
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    if bad.returncode == 0 or "whole number" not in (bad.stdout + bad.stderr):
+        sys.stdout.write("FAIL runaway-guard: invalid budget accepted\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS runaway-guard\n")
     sys.stdout.flush()
     return True
 
@@ -2079,6 +2220,8 @@ if __name__ == "__main__":
     all_passed = run_coalition_test() and all_passed
     all_passed = run_coalition_validation_test() and all_passed
     all_passed = run_coalition_advisory_test() and all_passed
+    all_passed = run_unit_helpers_test() and all_passed
+    all_passed = run_runaway_guard_test() and all_passed
 
     if all_passed:
         sys.stdout.write("\nAll tests passed.\n")

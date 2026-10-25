@@ -29,6 +29,7 @@ from tkinter import scrolledtext, messagebox, filedialog, simpledialog
 from interpreter import (
     LakeOntarioInterpreter,
     analyze_script as analyze_script_text,
+    resource_dir,
 )
 
 from .features.syntax_highlighting import SyntaxHighlightingText, LineNumberedText
@@ -44,7 +45,7 @@ except ImportError:
 
 SETTINGS_FILE = Path.home() / ".lake_ontario_settings.json"
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-EXAMPLES_DIR = ROOT_DIR / "examples"
+EXAMPLES_DIR = Path(resource_dir("examples"))
 
 DEFAULT_SCRIPT_TEMPLATE = """10 EXCUSE_ME Lake Ontario BASIC demo script
 20 LAND_ACKNOWLEDGEMENT "Traditional Territory"
@@ -585,7 +586,7 @@ class LakeOntarioApp:
         if not filename:
             return
         try:
-            with open(filename, "r", encoding="utf-8") as f:
+            with open(filename, "r", encoding="utf-8-sig") as f:
                 content = f.read()
             self.current_path = filename
             self._remember_recent_file(filename)
@@ -612,7 +613,7 @@ class LakeOntarioApp:
         if not filename:
             return
         try:
-            with open(filename, "r", encoding="utf-8") as f:
+            with open(filename, "r", encoding="utf-8-sig") as f:
                 content = f.read()
             self.current_path = filename
             self._remember_recent_file(filename)
@@ -657,7 +658,7 @@ class LakeOntarioApp:
     def load_example(self, filepath):
         """Load an example program from *filepath* into the editor."""
         try:
-            with open(filepath, "r", encoding="utf-8") as f:
+            with open(filepath, "r", encoding="utf-8-sig") as f:
                 content = f.read()
             self.current_path = None
             self.file_label.config(text=Path(filepath).name)

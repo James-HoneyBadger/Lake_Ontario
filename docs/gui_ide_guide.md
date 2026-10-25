@@ -12,7 +12,7 @@ IDE shell, rewired to run the Lake Ontario BASIC interpreter exclusively. It inc
 - find & replace (regex-capable)
 - built-in example script loader (`examples/*.lo`)
 - script validation (Debug → Validate Script) and runtime error history
-- 9 color themes and 7 font sizes, persisted to `~/.lake_ontario_settings.json`
+- 10 color themes and 7 font sizes, persisted to `~/.lake_ontario_settings.json`
 
 ## Launching the GUI IDE
 

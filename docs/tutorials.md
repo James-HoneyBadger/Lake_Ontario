@@ -64,13 +64,18 @@ What this teaches:
 
 ```lo
 10 FACT_CHECK count = 0
-20 WHILE_CLASS_CONSCIOUS count EQUAL_PAY 3
+20 WHILE_CLASS_CONSCIOUS count < 3
 30 BROADCAST_CBC count
 40 FACT_CHECK count = count EQUAL_PAY 1
 50 CONTINUE_ORGANIZING
 ```
 
 This example shows how the while-style loop is structured in Lake Ontario BASIC.
+
+The condition is evaluated before every pass, so it must eventually become false.
+`count EQUAL_PAY 3` would mean "count + 3", which is always true — that is an
+infinite loop, and the committee would be stuck in it forever. Use a comparison
+(`<`, `<=`, `>`, `>=`, `==`, `!=`) for loop conditions.
 
 ## Tutorial 5: For-style iteration
 

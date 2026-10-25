@@ -26,7 +26,7 @@ try:
 except ImportError:  # pragma: no cover - absent on some platforms
     readline = None
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 
 SUPPORTED_STATEMENT_PREFIXES = (
@@ -197,9 +197,20 @@ def suggest_correction(name, candidates):
     return f" — did you mean {matches[0]}? The committee is happy to assist."
 
 
+def strip_inline_comment(stmt):
+    """Remove a trailing ``EXCUSE_ME`` comment, leaving string literals alone."""
+    masked = mask_string_literals(stmt)
+    match = re.search(r"(^|\s)EXCUSE_ME\b", masked)
+    if not match:
+        return stmt
+    return stmt[: match.start()].rstrip()
+
+
 def mask_string_literals(text):
-    """Replace string literals with empty placeholders so keywords stay untouched."""
-    return STRING_LITERAL_PATTERN.sub('""', text)
+    """Blank out string literals, keeping offsets intact for later slicing."""
+    return STRING_LITERAL_PATTERN.sub(
+        lambda match: '"' + " " * (len(match.group(0)) - 2) + '"', text
+    )
 
 
 def find_function_calls(stmt):
@@ -435,9 +446,18 @@ def build_block_layout(lines):
                 chain.append((marker, index))
                 layout.owner[index] = opener_index
             else:
-                layout.report(
-                    line_number, f"{marker} has no COALITION block to belong to"
-                )
+                if any(kind == "coalition" for kind, _ in stack):
+                    open_kind = stack[-1][0]
+                    layout.report(
+                        line_number,
+                        f"{marker} appears inside an open "
+                        f"{BLOCK_LABELS[open_kind]} block. Close it with "
+                        f"{BLOCK_CLOSERS[open_kind]} before the next {marker}.",
+                    )
+                else:
+                    layout.report(
+                        line_number, f"{marker} has no COALITION block to belong to"
+                    )
             continue
 
         opener = _block_opener(stmt)
@@ -1384,11 +1404,32 @@ def _statement_arg(stmt):
     return rest.strip()
 
 
-def _render_broadcast(value):
-    """Render a BROADCAST_CBC value without leaking Python repr for tuples."""
+def _render_value(value):
+    """Render a value the way the language spells it, not the way Python does."""
+    if isinstance(value, bool):
+        return "EVIDENCE_BASED" if value else "ALTERNATIVE_FACT"
+    if value is None:
+        return "CLASSIFIED_MAR_A_LAGO"
+    if isinstance(value, float):
+        text = repr(value)
+        # Tidy floating-point noise (0.1 + 0.2) without hiding ordinary decimals.
+        return f"{value:.12g}" if len(text) > 12 else text
+    if isinstance(value, dict):
+        return "{" + ", ".join(
+            f"{key}: {_render_value(item)}" for key, item in value.items()
+        ) + "}"
+    if isinstance(value, list):
+        return "[" + ", ".join(str(_render_value(item)) for item in value) + "]"
     if isinstance(value, tuple):
-        return " ".join(str(item) for item in value)
+        return "(" + ", ".join(str(_render_value(item)) for item in value) + ")"
     return value
+
+
+def _render_broadcast(value):
+    """Render a BROADCAST_CBC value without leaking Python repr."""
+    if isinstance(value, tuple):
+        return " ".join(str(_render_value(item)) for item in value)
+    return _render_value(value)
 
 
 def _ask_town_hall(prompt):
@@ -1406,7 +1447,7 @@ def _ask_town_hall(prompt):
 
 
 class LakeOntarioInterpreter:
-    def __init__(self, strict=False, trace=False):
+    def __init__(self, strict=False, trace=False, max_steps=None):
         self.variables = {}
         self.lines = []
         self.line_map = {}
@@ -1415,6 +1456,7 @@ class LakeOntarioInterpreter:
         self.call_stack = []
         self.strict = strict
         self.trace = trace
+        self.max_steps = max_steps
         self.input_callback = None
         self.graphics_callbacks = {}
         self.sound_callbacks = {}
@@ -1460,11 +1502,16 @@ class LakeOntarioInterpreter:
             match = re.match(r"^(\d+)\s+(.*)$", stripped)
             if match:
                 line_num = int(match.group(1))
-                content = match.group(2).strip()
+                content = strip_inline_comment(match.group(2).strip())
+                if not content:
+                    continue
                 self.line_map[line_num] = len(self.lines)
                 self.lines.append((line_num, content))
             else:
-                self.lines.append((None, stripped))
+                content = strip_inline_comment(stripped)
+                if not content:
+                    continue
+                self.lines.append((None, content))
 
         self.block_layout = build_block_layout(self.lines)
 
@@ -1563,10 +1610,20 @@ class LakeOntarioInterpreter:
 
     def run(self):
         self.pc = 0
-        healthcare_stack = []
-        loop_stack = []
+        self._healthcare_stack = []
+        self._loop_stack = []
+        steps = 0
 
         while self.pc < len(self.lines):
+            if self.max_steps is not None:
+                steps += 1
+                if steps > self.max_steps:
+                    raise LakeOntarioRuntimeError(
+                        f"the committee stopped the debate after {self.max_steps} "
+                        "statements. A loop may be running forever; check the "
+                        "COAST_TO_COAST or WHILE_CLASS_CONSCIOUS condition, or "
+                        "raise the limit with --max-steps."
+                    )
             line_number, stmt = self.lines[self.pc]
             self.current_line_number = line_number
             self.pc += 1
@@ -1579,629 +1636,8 @@ class LakeOntarioInterpreter:
                 print(f"🧾 AUDIT TRAIL → {tag}: {stmt}")
 
             try:
-                if stmt.startswith("LAND_ACKNOWLEDGEMENT "):
-                    land_name = self.evaluate_expression(_statement_arg(stmt))
-                    print(
-                        "🍁 LAND ACKNOWLEDGEMENT: Respectfully acknowledging "
-                        f"traditional territory of {land_name}. 🍁"
-                    )
-                elif stmt == "HONEY_BADGER_MODE":
-                    self.strict = True
-                    print(
-                        "🦡 HONEY BADGER MODE ENGAGED: Fearless execution activated! "
-                        "Taking zero shit from MAGA spin, censorship, or "
-                        "intimidation! Undeclared names now face the evidence "
-                        "committee. 🦡"
-                    )
-                elif stmt.startswith("HONEY_BADGER_DONT_CARE "):
-                    target = self.evaluate_expression(_statement_arg(stmt))
-                    print(
-                        f"🦡 HONEY BADGER DOESN'T GIVE A SHIT ABOUT: '{target}'! "
-                        "Moving forward with 100% fearlessness! ⚡"
-                    )
-                elif stmt.startswith("BADGER_BITE "):
-                    target = self.evaluate_expression(_statement_arg(stmt))
-                    print(f"💥 BADGER BITE: {target} 💥")
-                elif stmt.startswith("FAT_CATS_TAX "):
-                    amount = self.evaluate_expression(_statement_arg(stmt))
-                    print(fat_cats_tax(amount))
-                elif stmt.startswith("DONUT_DIVIDEND "):
-                    amount = self.evaluate_expression(_statement_arg(stmt))
-                    print(donut_dividend(amount))
-                elif stmt.startswith("NATIONAL_STOOGE "):
-                    msg = self.evaluate_expression(_statement_arg(stmt))
-                    print(national_stooge(msg))
-                elif stmt.startswith("GREEN_NEW_DEAL "):
-                    goal = self.evaluate_expression(_statement_arg(stmt))
-                    print(green_new_deal(goal))
-                elif stmt.startswith("RHETORICAL_QUESTION "):
-                    question = self.evaluate_expression(_statement_arg(stmt))
-                    print(rhetorical_question(question))
-                elif stmt.startswith("LOONIE_LOOP "):
-                    count = self.evaluate_expression(_statement_arg(stmt))
-                    result = loonie_loop(count)
-                    print(result)
-                elif stmt.startswith("SOCIAL_LICENSE "):
-                    license_name = self.evaluate_expression(_statement_arg(stmt))
-                    print(social_license(license_name))
-                elif stmt.startswith("ELECTORATE_PULSE "):
-                    pulse = self.evaluate_expression(_statement_arg(stmt))
-                    print(electorate_pulse(pulse))
-                elif stmt.startswith("HEAR_HEAR "):
-                    point = self.evaluate_expression(_statement_arg(stmt))
-                    print(f"👏 HEAR, HEAR: {point}! The chamber reluctantly agrees.")
-                elif stmt.startswith("CITIZEN_PETITION "):
-                    petition = self.evaluate_expression(_statement_arg(stmt))
-                    print(
-                        f"📬 CITIZEN PETITION: {petition} — received, stamped, "
-                        "and sent to a very serious committee."
-                    )
-                elif stmt.startswith("VOTE_RECORDED "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",", 2)]
-                    if len(args) != 3:
-                        raise LakeOntarioInterpreterError(
-                            "VOTE_RECORDED requires voter, election, and choice"
-                        )
-                    voter, election, choice = (
-                        self.evaluate_expression(arg) for arg in args
-                    )
-                    self.vote_records.append(
-                        {"voter": voter, "election": election, "choice": choice}
-                    )
-                    print(
-                        f"🗳️ VOTE RECORDED: {voter} chose {choice} in {election}; "
-                        "the ballot has joined the extremely serious registry."
-                    )
-                elif stmt.startswith("PETITION_SIGNATURE_COLLECTED "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",", 1)]
-                    if len(args) != 2:
-                        raise LakeOntarioInterpreterError(
-                            "PETITION_SIGNATURE_COLLECTED requires name and petition"
-                        )
-                    name, petition = (self.evaluate_expression(arg) for arg in args)
-                    self.petition_signatures.append(
-                        {"name": name, "petition": petition}
-                    )
-                    print(
-                        f"📬 PETITION SIGNATURE: {name} signed {petition}; "
-                        "democracy has received another supporting document."
-                    )
-                elif stmt.startswith("TESTIMONY_ADDED "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",", 1)]
-                    if len(args) != 2:
-                        raise LakeOntarioInterpreterError(
-                            "TESTIMONY_ADDED requires witness and statement"
-                        )
-                    witness, statement = (
-                        self.evaluate_expression(arg) for arg in args
-                    )
-                    self.testimonies.append(
-                        {"witness": witness, "statement": statement}
-                    )
-                    print(
-                        f"📢 TESTIMONY ADDED: {witness} testified: {statement}; "
-                        "the inquiry has opened a fresh binder."
-                    )
-                elif stmt == "MOTION_PASSED":
-                    print(
-                        "✅ MOTION PASSED: The public interest has defeated "
-                        "administrative fog, eh."
-                    )
-                elif stmt == "NATIONAL_HEALTHCARE":
-                    healthcare_stack.append(self.pc - 1)
-                    print(
-                        "🏥 NATIONAL HEALTHCARE ENGAGED: Public safety net activated "
-                        "with honour and apologies."
-                    )
-                elif stmt.startswith("FACT_CHECK "):
-                    body = _statement_arg(stmt)
-                    if "=" not in body:
-                        raise LakeOntarioInterpreterError(
-                            "FACT_CHECK needs 'name = expression'"
-                        )
-                    var_name, val_expr = body.split("=", 1)
-                    var_name = var_name.strip()
-                    previous = self.variables.get(var_name, _UNSET)
-                    value = self.evaluate_expression(val_expr)
-                    self.variables[var_name] = value
-                    self._record_evidence(var_name, previous, value)
-                elif stmt.startswith("BROADCAST_CBC "):
-                    val_expr = _statement_arg(stmt)
-                    val = self.evaluate_expression(val_expr)
-                    print(_render_broadcast(val))
-                elif stmt.startswith("TOWN_HALL "):
-                    var_name = _statement_arg(stmt)
-                    if self.input_callback:
-                        user_val = self.input_callback(var_name)
-                    else:
-                        user_val = _ask_town_hall(
-                            f"🇨🇦 Democratic Input for {var_name}: "
-                        )
-                    try:
-                        self.variables[var_name] = int(user_val)
-                    except ValueError:
-                        self.variables[var_name] = user_val
-                elif stmt.startswith("INPUT_BOX "):
-                    var_name = _statement_arg(stmt)
-                    if self.input_callback:
-                        user_val = self.input_callback(
-                            var_name, prompt_type="input_box"
-                        )
-                    else:
-                        user_val = _ask_town_hall(
-                            f"🖥️ Input Box for {var_name}: "
-                        )
-                    try:
-                        self.variables[var_name] = int(user_val)
-                    except ValueError:
-                        self.variables[var_name] = user_val
-                elif stmt == "SHOW_VARS":
-                    if not self.variables:
-                        print("📋 CITIZEN REGISTER: empty, like a quiet town hall.")
-                    else:
-                        print("📋 CITIZEN REGISTER:")
-                        for name, value in self.variables.items():
-                            print(f"  {name} = {value}")
-                elif stmt == "RESET_CITIZENS":
-                    self.variables.clear()
-                    self.vote_records.clear()
-                    self.petition_signatures.clear()
-                    self.testimonies.clear()
-                    self.evidence_log.clear()
-                    print(
-                        "🧹 CITIZEN REGISTER RESET: all values cleared, democracy restored to baseline."
-                    )
-                elif stmt == "SHOW_EVIDENCE_LOG":
-                    self._print_evidence_log()
-                elif stmt.startswith("PUBLISH_EVIDENCE_LOG "):
-                    path = str(self.evaluate_expression(_statement_arg(stmt)))
-                    if not path:
-                        raise LakeOntarioInterpreterError(
-                            "PUBLISH_EVIDENCE_LOG requires a file path"
-                        )
-                    entries = len(self.evidence_log)
-                    try:
-                        with open(path, "w", encoding="utf-8") as handle:
-                            handle.write(self._evidence_log_text())
-                    except OSError as exc:
-                        raise LakeOntarioInterpreterError(
-                            f"PUBLISH_EVIDENCE_LOG could not write '{path}': {exc}"
-                        ) from None
-                    print(
-                        f"📄 Evidence log published to {path} "
-                        f"({entries} entr{'y' if entries == 1 else 'ies'})."
-                    )
-                elif stmt.startswith("FOR_EACH "):
-                    # FOR_EACH item IN collection
-                    body = _statement_arg(stmt)
-                    if " IN " not in body:
-                        raise LakeOntarioInterpreterError(
-                            "FOR_EACH needs 'item IN collection'"
-                        )
-                    var_name, collection_expr = body.split(" IN ", 1)
-                    var_name = var_name.strip()
-                    collection = self.evaluate_expression(collection_expr.strip())
-                    items = (
-                        list(collection)
-                        if isinstance(collection, (list, tuple))
-                        else []
-                    )
-                    if items:
-                        self.variables[var_name] = items[0]
-                        loop_stack.append(
-                            {
-                                "type": "foreach",
-                                "var": var_name,
-                                "items": items,
-                                "index": 0,
-                                "start_index": self.pc - 1,
-                            }
-                        )
-                    else:
-                        self.pc = self.block_layout.close_of(
-                            self.pc - 1, len(self.lines)
-                        ) + 1
-                elif stmt == "END_EACH":
-                    if loop_stack and loop_stack[-1]["type"] == "foreach":
-                        top = loop_stack[-1]
-                        top["index"] += 1
-                        if top["index"] < len(top["items"]):
-                            self.variables[top["var"]] = top["items"][top["index"]]
-                            self.pc = top["start_index"] + 1
-                        else:
-                            loop_stack.pop()
-                elif stmt.startswith("APPEND_TO "):
-                    body = _statement_arg(stmt)
-                    if "," not in body:
-                        raise LakeOntarioInterpreterError(
-                            "APPEND_TO must separate variable and value with a comma"
-                        )
-                    target_name, item_expr = body.split(",", 1)
-                    target_name = target_name.strip()
-                    item_value = self.evaluate_expression(item_expr.strip())
-                    if target_name not in self.variables:
-                        self.variables[target_name] = []
-                    if not isinstance(self.variables[target_name], list):
-                        self.variables[target_name] = [self.variables[target_name]]
-                    self.variables[target_name].append(item_value)
-                    print(f"📎 Appended to {target_name}: {item_value}")
-                elif stmt.startswith("REMOVE_FROM "):
-                    body = _statement_arg(stmt)
-                    if "," not in body:
-                        raise LakeOntarioInterpreterError(
-                            "REMOVE_FROM must separate variable and value with a comma"
-                        )
-                    target_name, item_expr = body.split(",", 1)
-                    target_name = target_name.strip()
-                    item_value = self.evaluate_expression(item_expr.strip())
-                    if target_name in self.variables and isinstance(
-                        self.variables[target_name], list
-                    ):
-                        try:
-                            self.variables[target_name].remove(item_value)
-                        except ValueError:
-                            pass
-                elif stmt.startswith("SORT_CITIZENS "):
-                    var_name = _statement_arg(stmt)
-                    if var_name in self.variables:
-                        self.variables[var_name] = sort_citizens(
-                            self.variables[var_name]
-                        )
-                        print(f"📊 Sorted {var_name}: {self.variables[var_name]}")
-                elif stmt.startswith("AVERAGE_CITIZENS "):
-                    var_name = _statement_arg(stmt)
-                    if var_name in self.variables:
-                        avg = average_citizens(self.variables[var_name])
-                        self.variables[f"{var_name}_average"] = avg
-                        print(f"📈 Average of {var_name}: {avg}")
-                elif stmt.startswith("SET_PEN_COLOR "):
-                    color_value = self.evaluate_expression(_statement_arg(stmt))
-                    callback = self.graphics_callbacks.get("pen_color")
-                    if callback:
-                        callback(color_value)
-                elif stmt.startswith("SET_FILL_COLOR "):
-                    color_value = self.evaluate_expression(_statement_arg(stmt))
-                    callback = self.graphics_callbacks.get("fill_color")
-                    if callback:
-                        callback(color_value)
-                elif stmt.startswith("SET_CANVAS_BG "):
-                    bg_value = self.evaluate_expression(_statement_arg(stmt))
-                    callback = self.graphics_callbacks.get("canvas_bg")
-                    if callback:
-                        callback(bg_value)
-                elif stmt.startswith("FILL_RECTANGLE "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
-                    if len(args) == 4:
-                        x = self.evaluate_expression(args[0])
-                        y = self.evaluate_expression(args[1])
-                        width = self.evaluate_expression(args[2])
-                        height = self.evaluate_expression(args[3])
-                        callback = self.graphics_callbacks.get("filled_rectangle")
-                        if callback:
-                            callback(x, y, width, height)
-                elif stmt.startswith("FILL_CIRCLE "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
-                    if len(args) == 3:
-                        x = self.evaluate_expression(args[0])
-                        y = self.evaluate_expression(args[1])
-                        radius = self.evaluate_expression(args[2])
-                        callback = self.graphics_callbacks.get("filled_circle")
-                        if callback:
-                            callback(x, y, radius)
-                elif stmt.startswith("WAIT "):
-                    delay = float(self.evaluate_expression(_statement_arg(stmt)))
-                    time.sleep(min(max(delay / 1000.0, 0.0), 5.0))
-                elif stmt.startswith("PUBLISH_RESEARCH_FILE "):
-                    body = _statement_arg(stmt)
-                    path_expr, content_expr = body.split(",", 1)
-                    path = self.evaluate_expression(path_expr)
-                    content = self.evaluate_expression(content_expr)
-                    publish_research(path, content)
-                    print(f"📄 Published research document to {path}")
-                elif stmt == "CLEAR_GRAPHICS":
-                    callback = self.graphics_callbacks.get("clear")
-                    if callback:
-                        callback()
-                elif stmt.startswith("DRAW_LINE "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
-                    if len(args) == 4:
-                        x1 = self.evaluate_expression(args[0])
-                        y1 = self.evaluate_expression(args[1])
-                        x2 = self.evaluate_expression(args[2])
-                        y2 = self.evaluate_expression(args[3])
-                        callback = self.graphics_callbacks.get("line")
-                        if callback:
-                            callback(x1, y1, x2, y2)
-                elif stmt.startswith("DRAW_RECTANGLE "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
-                    if len(args) == 4:
-                        x = self.evaluate_expression(args[0])
-                        y = self.evaluate_expression(args[1])
-                        width = self.evaluate_expression(args[2])
-                        height = self.evaluate_expression(args[3])
-                        callback = self.graphics_callbacks.get("rectangle")
-                        if callback:
-                            callback(x, y, width, height)
-                elif stmt.startswith("DRAW_CIRCLE "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
-                    if len(args) == 3:
-                        x = self.evaluate_expression(args[0])
-                        y = self.evaluate_expression(args[1])
-                        radius = self.evaluate_expression(args[2])
-                        callback = self.graphics_callbacks.get("circle")
-                        if callback:
-                            callback(x, y, radius)
-                elif stmt.startswith("DRAW_TEXT "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",", 2)]
-                    if len(args) == 3:
-                        x = self.evaluate_expression(args[0])
-                        y = self.evaluate_expression(args[1])
-                        text = self.evaluate_expression(args[2])
-                        callback = self.graphics_callbacks.get("text")
-                        if callback:
-                            callback(x, y, text)
-                elif stmt.startswith("SET_PEN_WIDTH "):
-                    width_value = self.evaluate_expression(_statement_arg(stmt))
-                    callback = self.graphics_callbacks.get("pen_width")
-                    if callback:
-                        callback(width_value)
-                elif stmt.startswith("DRAW_POINT "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
-                    if len(args) == 2:
-                        x = self.evaluate_expression(args[0])
-                        y = self.evaluate_expression(args[1])
-                        callback = self.graphics_callbacks.get("point")
-                        if callback:
-                            callback(x, y)
-                elif stmt.startswith("DRAW_OVAL "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
-                    if len(args) == 4:
-                        coords = [self.evaluate_expression(arg) for arg in args]
-                        callback = self.graphics_callbacks.get("oval")
-                        if callback:
-                            callback(*coords)
-                elif stmt.startswith("FILL_OVAL "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
-                    if len(args) == 4:
-                        coords = [self.evaluate_expression(arg) for arg in args]
-                        callback = self.graphics_callbacks.get("filled_oval")
-                        if callback:
-                            callback(*coords)
-                elif stmt.startswith("DRAW_ARC "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
-                    if len(args) == 5:
-                        x, y, radius, start, extent = (
-                            self.evaluate_expression(arg) for arg in args
-                        )
-                        callback = self.graphics_callbacks.get("arc")
-                        if callback:
-                            callback(x, y, radius, start, extent)
-                elif stmt.startswith("DRAW_POLYGON "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
-                    if len(args) >= 6 and len(args) % 2 == 0:
-                        points = [self.evaluate_expression(arg) for arg in args]
-                        callback = self.graphics_callbacks.get("polygon")
-                        if callback:
-                            callback(*points)
-                elif stmt.startswith("FILL_POLYGON "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
-                    if len(args) >= 6 and len(args) % 2 == 0:
-                        points = [self.evaluate_expression(arg) for arg in args]
-                        callback = self.graphics_callbacks.get("filled_polygon")
-                        if callback:
-                            callback(*points)
-                elif stmt.startswith("DRAW_TRIANGLE "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
-                    if len(args) == 6:
-                        points = [self.evaluate_expression(arg) for arg in args]
-                        callback = self.graphics_callbacks.get("triangle")
-                        if callback:
-                            callback(*points)
-                elif stmt.startswith("FILL_TRIANGLE "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
-                    if len(args) == 6:
-                        points = [self.evaluate_expression(arg) for arg in args]
-                        callback = self.graphics_callbacks.get("filled_triangle")
-                        if callback:
-                            callback(*points)
-                elif stmt.startswith("PLAY_TONE "):
-                    args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
-                    if len(args) == 2:
-                        frequency = self.evaluate_expression(args[0])
-                        duration_ms = self.evaluate_expression(args[1])
-                        self._play_tone(frequency, duration_ms)
-                elif stmt.startswith("PLAY_SOUND_FILE "):
-                    path = self.evaluate_expression(_statement_arg(stmt))
-                    callback = self.sound_callbacks.get("file")
-                    if callback:
-                        callback(path)
-                    print(f"🔊 Playing sound file: {path}")
-                elif stmt == "STOP_SOUND":
-                    callback = self.sound_callbacks.get("stop")
-                    if callback:
-                        callback()
-                elif stmt == "HONEY_BADGER_GROWL":
-                    self._play_tone(110, 220)
-                    print("🦡 GRRRR! The Honey Badger growls — it don't care!")
-                elif stmt == "TOWN_HALL_BELL":
-                    self._play_tone(880, 400)
-                    print("🔔 Order! Order! The Town Hall bell calls the room to order.")
-                elif stmt == "STANDING_OVATION":
-                    for tone_frequency in (523, 659, 784, 1047):
-                        self._play_tone(tone_frequency, 120)
-                    print("👏 The gallery rises for a standing ovation!")
-                elif stmt.startswith("PERHAPS "):
-                    cond_expr = _statement_arg(stmt).replace(
-                        " FACT_ESTABLISHED", ""
-                    ).strip()
-                    res = self.evaluate_expression(cond_expr)
-                    if not res:
-                        self.pc = self._next_perhaps_branch(self.pc - 1)
-                elif stmt.startswith("PERHAPS_ALSO "):
-                    # Reached in sequence: an earlier branch already ran, so the
-                    # rest of the motion is out of order.
-                    self.pc = self._skip_to_block_end(self.pc - 1)
-                elif stmt == "STILL_IN_DENIAL":
-                    self.pc = self._skip_to_block_end(self.pc - 1)
-                elif stmt == "END_PERHAPS":
-                    pass
-                elif stmt.startswith("COALITION "):
-                    subject = self.evaluate_expression(_statement_arg(stmt))
-                    self.pc = self._enter_coalition(subject, self.pc - 1)
-                elif stmt.startswith("PLANK "):
-                    # Reached in sequence: an earlier plank already matched.
-                    self.pc = self._skip_to_block_end(self.pc - 1)
-                elif stmt == "MINORITY_REPORT":
-                    self.pc = self._skip_to_block_end(self.pc - 1)
-                elif stmt == "END_COALITION":
-                    pass
-                elif stmt.startswith("WHILE_CLASS_CONSCIOUS "):
-                    cond_expr = _statement_arg(stmt)
-                    if self.evaluate_expression(cond_expr):
-                        loop_stack.append(
-                            {
-                                "type": "while",
-                                "cond": cond_expr,
-                                "start_index": self.pc - 1,
-                            }
-                        )
-                    else:
-                        self.pc = self._skip_to_block_end(self.pc - 1)
-                elif stmt == "CONTINUE_ORGANIZING":
-                    if loop_stack and loop_stack[-1]["type"] == "while":
-                        top = loop_stack[-1]
-                        if self.evaluate_expression(top["cond"]):
-                            self.pc = top["start_index"] + 1
-                        else:
-                            loop_stack.pop()
-                elif stmt == "UNIVERSAL_HEALTHCARE":
-                    healthcare_stack.append(self.pc - 1)
-                elif stmt == "EXECUTIVE_ORDER_BLOCKED":
-                    if healthcare_stack:
-                        healthcare_stack.pop()
-                elif stmt.startswith("COAST_TO_COAST "):
-                    loop_def = _statement_arg(stmt)
-                    step_val = 1
-                    if " STEP " in loop_def:
-                        loop_def, step_expr = loop_def.split(" STEP ")
-                        step_val = self.evaluate_expression(step_expr)
-                    if " UP_TO " not in loop_def:
-                        raise LakeOntarioInterpreterError(
-                            "COAST_TO_COAST needs 'var = start UP_TO end'"
-                        )
-                    var_part, range_part = loop_def.split(" UP_TO ", 1)
-                    if "=" not in var_part:
-                        raise LakeOntarioInterpreterError(
-                            "COAST_TO_COAST needs 'var = start UP_TO end'"
-                        )
-                    if not step_val:
-                        raise LakeOntarioInterpreterError(
-                            "STEP 0 would march in place forever. The committee "
-                            "recommends a step that actually moves."
-                        )
-                    var_name, start_expr = var_part.split("=", 1)
-                    var_name = var_name.strip()
-                    start_val = self.evaluate_expression(start_expr)
-                    end_val = self.evaluate_expression(range_part)
-                    self.variables[var_name] = start_val
-                    loop_stack.append(
-                        {
-                            "type": "for",
-                            "var": var_name,
-                            "end": end_val,
-                            "step": step_val,
-                            "start_index": self.pc - 1,
-                        }
-                    )
-                elif stmt == "THANK_YOU_EH":
-                    if loop_stack and loop_stack[-1]["type"] == "for":
-                        top = loop_stack[-1]
-                        current_val = self.variables[top["var"]] + top["step"]
-                        if (top["step"] > 0 and current_val <= top["end"]) or (
-                            top["step"] < 0 and current_val >= top["end"]
-                        ):
-                            self.variables[top["var"]] = current_val
-                            self.pc = top["start_index"] + 1
-                        else:
-                            loop_stack.pop()
-                elif stmt == "BREAK_FROM_CAUCUS":
-                    if loop_stack:
-                        top = loop_stack.pop()
-                        self.pc = self.block_layout.close_of(
-                            top["start_index"], len(self.lines)
-                        ) + 1
-                elif stmt == "NEXT_MOTION":
-                    if loop_stack:
-                        top = loop_stack[-1]
-                        if top["type"] == "for":
-                            current_val = self.variables[top["var"]] + top["step"]
-                            if (top["step"] > 0 and current_val <= top["end"]) or (
-                                top["step"] < 0 and current_val >= top["end"]
-                            ):
-                                self.variables[top["var"]] = current_val
-                                self.pc = top["start_index"] + 1
-                            else:
-                                loop_stack.pop()
-                        elif top["type"] == "while":
-                            if self.evaluate_expression(top["cond"]):
-                                self.pc = top["start_index"] + 1
-                            else:
-                                loop_stack.pop()
-                        elif top["type"] == "foreach":
-                            top["index"] += 1
-                            if top["index"] < len(top["items"]):
-                                self.variables[top["var"]] = top["items"][top["index"]]
-                                self.pc = top["start_index"] + 1
-                            else:
-                                loop_stack.pop()
-                                # step past END_EACH; the loop is over
-                                self.pc = self.block_layout.close_of(
-                                    top["start_index"], len(self.lines)
-                                ) + 1
-                elif stmt.startswith("SUBPOENA "):
-                    target_text = _statement_arg(stmt)
-                    if not target_text.lstrip("-").isdigit():
-                        raise LakeOntarioInterpreterError(
-                            "SUBPOENA must target a numbered line"
-                        )
-                    target = int(target_text)
-                    if target in self.line_map:
-                        self.call_stack.append(self.pc)
-                        self.pc = self.line_map[target]
-                    else:
-                        print(f"Subpoena Error: Line {target} ignored subpoena!")
-                elif stmt == "RETURN_TO_OTTAWA":
-                    if self.call_stack:
-                        self.pc = self.call_stack.pop()
-                    else:
-                        print("Error: RETURN_TO_OTTAWA with empty call stack, eh!")
-                elif stmt.startswith("GOLF_VACATION "):
-                    seconds = self.evaluate_expression(_statement_arg(stmt))
-                    try:
-                        sec = float(seconds)
-                    except (TypeError, ValueError):
-                        raise LakeOntarioInterpreterError(
-                            "GOLF_VACATION requires a numeric number of seconds"
-                        ) from None
-                    print(f"⛳ Executive on Golf Vacation for {sec} seconds...")
-                    time.sleep(min(sec, 2.0))
-                elif stmt.startswith("CLIMATE_EMERGENCY "):
-                    msg = self.evaluate_expression(_statement_arg(stmt))
-                    raise LakeOntarioInterpreterError(
-                        f"CLIMATE EMERGENCY RAISED: {msg}"
-                    )
-                elif stmt == "IMPEACH":
-                    print("🏛️ IMPEACHMENT EFFECTIVE: Program terminated cleanly.")
+                if not self._dispatch(stmt):
                     break
-                else:
-                    head = stmt.split()[0] if stmt.split() else stmt
-                    if head in KNOWN_KEYWORD_NAMES:
-                        raise LakeOntarioInterpreterError(
-                            f"{head} requires an argument"
-                        )
-                    raise LakeOntarioInterpreterError(
-                        f"unsupported statement '{head}'"
-                    )
             except (
                 LakeOntarioInterpreterError,
                 OSError,
@@ -2211,8 +1647,8 @@ class LakeOntarioInterpreter:
                 SyntaxError,
                 NameError,
             ) as e:
-                if healthcare_stack:
-                    opener_index = healthcare_stack.pop()
+                if self._healthcare_stack:
+                    opener_index = self._healthcare_stack.pop()
                     self.pc = self.block_layout.close_of(
                         opener_index, len(self.lines)
                     ) + 1
@@ -2223,6 +1659,656 @@ class LakeOntarioInterpreter:
                         else ""
                     )
                     raise LakeOntarioRuntimeError(f"{line_tag}{e}") from e
+
+    def _dispatch(self, stmt):
+        """Execute one statement. Returns False when the script should stop."""
+        if stmt.startswith("LAND_ACKNOWLEDGEMENT "):
+            land_name = self.evaluate_expression(_statement_arg(stmt))
+            print(
+                "🍁 LAND ACKNOWLEDGEMENT: Respectfully acknowledging "
+                f"traditional territory of {land_name}. 🍁"
+            )
+        elif stmt == "HONEY_BADGER_MODE":
+            self.strict = True
+            print(
+                "🦡 HONEY BADGER MODE ENGAGED: Fearless execution activated! "
+                "Taking zero shit from MAGA spin, censorship, or "
+                "intimidation! Undeclared names now face the evidence "
+                "committee. 🦡"
+            )
+        elif stmt.startswith("HONEY_BADGER_DONT_CARE "):
+            target = self.evaluate_expression(_statement_arg(stmt))
+            print(
+                f"🦡 HONEY BADGER DOESN'T GIVE A SHIT ABOUT: '{target}'! "
+                "Moving forward with 100% fearlessness! ⚡"
+            )
+        elif stmt.startswith("BADGER_BITE "):
+            target = self.evaluate_expression(_statement_arg(stmt))
+            print(f"💥 BADGER BITE: {target} 💥")
+        elif stmt.startswith("FAT_CATS_TAX "):
+            amount = self.evaluate_expression(_statement_arg(stmt))
+            print(fat_cats_tax(amount))
+        elif stmt.startswith("DONUT_DIVIDEND "):
+            amount = self.evaluate_expression(_statement_arg(stmt))
+            print(donut_dividend(amount))
+        elif stmt.startswith("NATIONAL_STOOGE "):
+            msg = self.evaluate_expression(_statement_arg(stmt))
+            print(national_stooge(msg))
+        elif stmt.startswith("GREEN_NEW_DEAL "):
+            goal = self.evaluate_expression(_statement_arg(stmt))
+            print(green_new_deal(goal))
+        elif stmt.startswith("RHETORICAL_QUESTION "):
+            question = self.evaluate_expression(_statement_arg(stmt))
+            print(rhetorical_question(question))
+        elif stmt.startswith("LOONIE_LOOP "):
+            count = self.evaluate_expression(_statement_arg(stmt))
+            result = loonie_loop(count)
+            print(result)
+        elif stmt.startswith("SOCIAL_LICENSE "):
+            license_name = self.evaluate_expression(_statement_arg(stmt))
+            print(social_license(license_name))
+        elif stmt.startswith("ELECTORATE_PULSE "):
+            pulse = self.evaluate_expression(_statement_arg(stmt))
+            print(electorate_pulse(pulse))
+        elif stmt.startswith("HEAR_HEAR "):
+            point = self.evaluate_expression(_statement_arg(stmt))
+            print(f"👏 HEAR, HEAR: {point}! The chamber reluctantly agrees.")
+        elif stmt.startswith("CITIZEN_PETITION "):
+            petition = self.evaluate_expression(_statement_arg(stmt))
+            print(
+                f"📬 CITIZEN PETITION: {petition} — received, stamped, "
+                "and sent to a very serious committee."
+            )
+        elif stmt.startswith("VOTE_RECORDED "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",", 2)]
+            if len(args) != 3:
+                raise LakeOntarioInterpreterError(
+                    "VOTE_RECORDED requires voter, election, and choice"
+                )
+            voter, election, choice = (
+                self.evaluate_expression(arg) for arg in args
+            )
+            self.vote_records.append(
+                {"voter": voter, "election": election, "choice": choice}
+            )
+            print(
+                f"🗳️ VOTE RECORDED: {voter} chose {choice} in {election}; "
+                "the ballot has joined the extremely serious registry."
+            )
+        elif stmt.startswith("PETITION_SIGNATURE_COLLECTED "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",", 1)]
+            if len(args) != 2:
+                raise LakeOntarioInterpreterError(
+                    "PETITION_SIGNATURE_COLLECTED requires name and petition"
+                )
+            name, petition = (self.evaluate_expression(arg) for arg in args)
+            self.petition_signatures.append(
+                {"name": name, "petition": petition}
+            )
+            print(
+                f"📬 PETITION SIGNATURE: {name} signed {petition}; "
+                "democracy has received another supporting document."
+            )
+        elif stmt.startswith("TESTIMONY_ADDED "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",", 1)]
+            if len(args) != 2:
+                raise LakeOntarioInterpreterError(
+                    "TESTIMONY_ADDED requires witness and statement"
+                )
+            witness, statement = (
+                self.evaluate_expression(arg) for arg in args
+            )
+            self.testimonies.append(
+                {"witness": witness, "statement": statement}
+            )
+            print(
+                f"📢 TESTIMONY ADDED: {witness} testified: {statement}; "
+                "the inquiry has opened a fresh binder."
+            )
+        elif stmt == "MOTION_PASSED":
+            print(
+                "✅ MOTION PASSED: The public interest has defeated "
+                "administrative fog, eh."
+            )
+        elif stmt == "NATIONAL_HEALTHCARE":
+            self._healthcare_stack.append(self.pc - 1)
+            print(
+                "🏥 NATIONAL HEALTHCARE ENGAGED: Public safety net activated "
+                "with honour and apologies."
+            )
+        elif stmt.startswith("FACT_CHECK "):
+            body = _statement_arg(stmt)
+            if "=" not in body:
+                raise LakeOntarioInterpreterError(
+                    "FACT_CHECK needs 'name = expression'"
+                )
+            var_name, val_expr = body.split("=", 1)
+            var_name = var_name.strip()
+            previous = self.variables.get(var_name, _UNSET)
+            value = self.evaluate_expression(val_expr)
+            self.variables[var_name] = value
+            self._record_evidence(var_name, previous, value)
+        elif stmt.startswith("BROADCAST_CBC "):
+            val_expr = _statement_arg(stmt)
+            val = self.evaluate_expression(val_expr)
+            print(_render_broadcast(val))
+        elif stmt.startswith("TOWN_HALL "):
+            var_name = _statement_arg(stmt)
+            if self.input_callback:
+                user_val = self.input_callback(var_name)
+            else:
+                user_val = _ask_town_hall(
+                    f"🇨🇦 Democratic Input for {var_name}: "
+                )
+            try:
+                self.variables[var_name] = int(user_val)
+            except ValueError:
+                self.variables[var_name] = user_val
+        elif stmt.startswith("INPUT_BOX "):
+            var_name = _statement_arg(stmt)
+            if self.input_callback:
+                user_val = self.input_callback(
+                    var_name, prompt_type="input_box"
+                )
+            else:
+                user_val = _ask_town_hall(
+                    f"🖥️ Input Box for {var_name}: "
+                )
+            try:
+                self.variables[var_name] = int(user_val)
+            except ValueError:
+                self.variables[var_name] = user_val
+        elif stmt == "SHOW_VARS":
+            if not self.variables:
+                print("📋 CITIZEN REGISTER: empty, like a quiet town hall.")
+            else:
+                print("📋 CITIZEN REGISTER:")
+                for name, value in self.variables.items():
+                    print(f"  {name} = {value}")
+        elif stmt == "RESET_CITIZENS":
+            self.variables.clear()
+            self.vote_records.clear()
+            self.petition_signatures.clear()
+            self.testimonies.clear()
+            self.evidence_log.clear()
+            print(
+                "🧹 CITIZEN REGISTER RESET: all values cleared, democracy restored to baseline."
+            )
+        elif stmt == "SHOW_EVIDENCE_LOG":
+            self._print_evidence_log()
+        elif stmt.startswith("PUBLISH_EVIDENCE_LOG "):
+            path = str(self.evaluate_expression(_statement_arg(stmt)))
+            if not path:
+                raise LakeOntarioInterpreterError(
+                    "PUBLISH_EVIDENCE_LOG requires a file path"
+                )
+            entries = len(self.evidence_log)
+            try:
+                with open(path, "w", encoding="utf-8") as handle:
+                    handle.write(self._evidence_log_text())
+            except OSError as exc:
+                raise LakeOntarioInterpreterError(
+                    f"PUBLISH_EVIDENCE_LOG could not write '{path}': {exc}"
+                ) from None
+            print(
+                f"📄 Evidence log published to {path} "
+                f"({entries} entr{'y' if entries == 1 else 'ies'})."
+            )
+        elif stmt.startswith("FOR_EACH "):
+            # FOR_EACH item IN collection
+            body = _statement_arg(stmt)
+            if " IN " not in body:
+                raise LakeOntarioInterpreterError(
+                    "FOR_EACH needs 'item IN collection'"
+                )
+            var_name, collection_expr = body.split(" IN ", 1)
+            var_name = var_name.strip()
+            collection = self.evaluate_expression(collection_expr.strip())
+            if isinstance(collection, dict):
+                raise LakeOntarioInterpreterError(
+                    "FOR_EACH needs a collective; that value is a registry. "
+                    "Try REGISTRY_KEYS(...) or REGISTRY_VALUES(...)."
+                )
+            if isinstance(collection, str):
+                raise LakeOntarioInterpreterError(
+                    "FOR_EACH needs a collective; that value is text. "
+                    "Try STR_SPLIT(...) first."
+                )
+            if not isinstance(collection, (list, tuple)):
+                raise LakeOntarioInterpreterError(
+                    "FOR_EACH needs a collective, but that value is "
+                    f"{type(collection).__name__}."
+                )
+            items = list(collection)
+            if items:
+                self.variables[var_name] = items[0]
+                self._loop_stack.append(
+                    {
+                        "type": "foreach",
+                        "var": var_name,
+                        "items": items,
+                        "index": 0,
+                        "start_index": self.pc - 1,
+                    }
+                )
+            else:
+                self.pc = self.block_layout.close_of(
+                    self.pc - 1, len(self.lines)
+                ) + 1
+        elif stmt == "END_EACH":
+            if self._loop_stack and self._loop_stack[-1]["type"] == "foreach":
+                top = self._loop_stack[-1]
+                top["index"] += 1
+                if top["index"] < len(top["items"]):
+                    self.variables[top["var"]] = top["items"][top["index"]]
+                    self.pc = top["start_index"] + 1
+                else:
+                    self._loop_stack.pop()
+        elif stmt.startswith("APPEND_TO "):
+            body = _statement_arg(stmt)
+            if "," not in body:
+                raise LakeOntarioInterpreterError(
+                    "APPEND_TO must separate variable and value with a comma"
+                )
+            target_name, item_expr = body.split(",", 1)
+            target_name = target_name.strip()
+            item_value = self.evaluate_expression(item_expr.strip())
+            if target_name not in self.variables:
+                self.variables[target_name] = []
+            if not isinstance(self.variables[target_name], list):
+                self.variables[target_name] = [self.variables[target_name]]
+            self.variables[target_name].append(item_value)
+            print(f"📎 Appended to {target_name}: {item_value}")
+        elif stmt.startswith("REMOVE_FROM "):
+            body = _statement_arg(stmt)
+            if "," not in body:
+                raise LakeOntarioInterpreterError(
+                    "REMOVE_FROM must separate variable and value with a comma"
+                )
+            target_name, item_expr = body.split(",", 1)
+            target_name = target_name.strip()
+            item_value = self.evaluate_expression(item_expr.strip())
+            if target_name in self.variables and isinstance(
+                self.variables[target_name], list
+            ):
+                try:
+                    self.variables[target_name].remove(item_value)
+                except ValueError:
+                    print(
+                        f"🗒️ REMOVE_FROM: {item_value} was not on the "
+                        f"record for {target_name}, eh."
+                    )
+        elif stmt.startswith("SORT_CITIZENS "):
+            var_name = _statement_arg(stmt)
+            if var_name in self.variables:
+                self.variables[var_name] = sort_citizens(
+                    self.variables[var_name]
+                )
+                print(f"📊 Sorted {var_name}: {self.variables[var_name]}")
+        elif stmt.startswith("AVERAGE_CITIZENS "):
+            var_name = _statement_arg(stmt)
+            if var_name in self.variables:
+                avg = average_citizens(self.variables[var_name])
+                self.variables[f"{var_name}_average"] = avg
+                print(f"📈 Average of {var_name}: {avg}")
+        elif stmt.startswith("SET_PEN_COLOR "):
+            color_value = self.evaluate_expression(_statement_arg(stmt))
+            callback = self.graphics_callbacks.get("pen_color")
+            if callback:
+                callback(color_value)
+        elif stmt.startswith("SET_FILL_COLOR "):
+            color_value = self.evaluate_expression(_statement_arg(stmt))
+            callback = self.graphics_callbacks.get("fill_color")
+            if callback:
+                callback(color_value)
+        elif stmt.startswith("SET_CANVAS_BG "):
+            bg_value = self.evaluate_expression(_statement_arg(stmt))
+            callback = self.graphics_callbacks.get("canvas_bg")
+            if callback:
+                callback(bg_value)
+        elif stmt.startswith("FILL_RECTANGLE "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
+            if len(args) == 4:
+                x = self.evaluate_expression(args[0])
+                y = self.evaluate_expression(args[1])
+                width = self.evaluate_expression(args[2])
+                height = self.evaluate_expression(args[3])
+                callback = self.graphics_callbacks.get("filled_rectangle")
+                if callback:
+                    callback(x, y, width, height)
+        elif stmt.startswith("FILL_CIRCLE "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
+            if len(args) == 3:
+                x = self.evaluate_expression(args[0])
+                y = self.evaluate_expression(args[1])
+                radius = self.evaluate_expression(args[2])
+                callback = self.graphics_callbacks.get("filled_circle")
+                if callback:
+                    callback(x, y, radius)
+        elif stmt.startswith("WAIT "):
+            delay = float(self.evaluate_expression(_statement_arg(stmt)))
+            time.sleep(min(max(delay / 1000.0, 0.0), 5.0))
+        elif stmt.startswith("PUBLISH_RESEARCH_FILE "):
+            body = _statement_arg(stmt)
+            if "," not in body:
+                raise LakeOntarioInterpreterError(
+                    "PUBLISH_RESEARCH_FILE must separate path and content "
+                    "with a comma"
+                )
+            path_expr, content_expr = body.split(",", 1)
+            path = self.evaluate_expression(path_expr)
+            content = self.evaluate_expression(content_expr)
+            if not publish_research(path, content):
+                raise LakeOntarioInterpreterError(
+                    f"PUBLISH_RESEARCH_FILE could not write '{path}'. "
+                    "The document was not published."
+                )
+            print(f"📄 Published research document to {path}")
+        elif stmt == "CLEAR_GRAPHICS":
+            callback = self.graphics_callbacks.get("clear")
+            if callback:
+                callback()
+        elif stmt.startswith("DRAW_LINE "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
+            if len(args) == 4:
+                x1 = self.evaluate_expression(args[0])
+                y1 = self.evaluate_expression(args[1])
+                x2 = self.evaluate_expression(args[2])
+                y2 = self.evaluate_expression(args[3])
+                callback = self.graphics_callbacks.get("line")
+                if callback:
+                    callback(x1, y1, x2, y2)
+        elif stmt.startswith("DRAW_RECTANGLE "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
+            if len(args) == 4:
+                x = self.evaluate_expression(args[0])
+                y = self.evaluate_expression(args[1])
+                width = self.evaluate_expression(args[2])
+                height = self.evaluate_expression(args[3])
+                callback = self.graphics_callbacks.get("rectangle")
+                if callback:
+                    callback(x, y, width, height)
+        elif stmt.startswith("DRAW_CIRCLE "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
+            if len(args) == 3:
+                x = self.evaluate_expression(args[0])
+                y = self.evaluate_expression(args[1])
+                radius = self.evaluate_expression(args[2])
+                callback = self.graphics_callbacks.get("circle")
+                if callback:
+                    callback(x, y, radius)
+        elif stmt.startswith("DRAW_TEXT "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",", 2)]
+            if len(args) == 3:
+                x = self.evaluate_expression(args[0])
+                y = self.evaluate_expression(args[1])
+                text = self.evaluate_expression(args[2])
+                callback = self.graphics_callbacks.get("text")
+                if callback:
+                    callback(x, y, text)
+        elif stmt.startswith("SET_PEN_WIDTH "):
+            width_value = self.evaluate_expression(_statement_arg(stmt))
+            callback = self.graphics_callbacks.get("pen_width")
+            if callback:
+                callback(width_value)
+        elif stmt.startswith("DRAW_POINT "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
+            if len(args) == 2:
+                x = self.evaluate_expression(args[0])
+                y = self.evaluate_expression(args[1])
+                callback = self.graphics_callbacks.get("point")
+                if callback:
+                    callback(x, y)
+        elif stmt.startswith("DRAW_OVAL "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
+            if len(args) == 4:
+                coords = [self.evaluate_expression(arg) for arg in args]
+                callback = self.graphics_callbacks.get("oval")
+                if callback:
+                    callback(*coords)
+        elif stmt.startswith("FILL_OVAL "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
+            if len(args) == 4:
+                coords = [self.evaluate_expression(arg) for arg in args]
+                callback = self.graphics_callbacks.get("filled_oval")
+                if callback:
+                    callback(*coords)
+        elif stmt.startswith("DRAW_ARC "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
+            if len(args) == 5:
+                x, y, radius, start, extent = (
+                    self.evaluate_expression(arg) for arg in args
+                )
+                callback = self.graphics_callbacks.get("arc")
+                if callback:
+                    callback(x, y, radius, start, extent)
+        elif stmt.startswith("DRAW_POLYGON "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
+            if len(args) >= 6 and len(args) % 2 == 0:
+                points = [self.evaluate_expression(arg) for arg in args]
+                callback = self.graphics_callbacks.get("polygon")
+                if callback:
+                    callback(*points)
+        elif stmt.startswith("FILL_POLYGON "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
+            if len(args) >= 6 and len(args) % 2 == 0:
+                points = [self.evaluate_expression(arg) for arg in args]
+                callback = self.graphics_callbacks.get("filled_polygon")
+                if callback:
+                    callback(*points)
+        elif stmt.startswith("DRAW_TRIANGLE "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
+            if len(args) == 6:
+                points = [self.evaluate_expression(arg) for arg in args]
+                callback = self.graphics_callbacks.get("triangle")
+                if callback:
+                    callback(*points)
+        elif stmt.startswith("FILL_TRIANGLE "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
+            if len(args) == 6:
+                points = [self.evaluate_expression(arg) for arg in args]
+                callback = self.graphics_callbacks.get("filled_triangle")
+                if callback:
+                    callback(*points)
+        elif stmt.startswith("PLAY_TONE "):
+            args = [arg.strip() for arg in _statement_arg(stmt).split(",")]
+            if len(args) == 2:
+                frequency = self.evaluate_expression(args[0])
+                duration_ms = self.evaluate_expression(args[1])
+                self._play_tone(frequency, duration_ms)
+        elif stmt.startswith("PLAY_SOUND_FILE "):
+            path = self.evaluate_expression(_statement_arg(stmt))
+            callback = self.sound_callbacks.get("file")
+            if callback:
+                callback(path)
+            print(f"🔊 Playing sound file: {path}")
+        elif stmt == "STOP_SOUND":
+            callback = self.sound_callbacks.get("stop")
+            if callback:
+                callback()
+        elif stmt == "HONEY_BADGER_GROWL":
+            self._play_tone(110, 220)
+            print("🦡 GRRRR! The Honey Badger growls — it don't care!")
+        elif stmt == "TOWN_HALL_BELL":
+            self._play_tone(880, 400)
+            print("🔔 Order! Order! The Town Hall bell calls the room to order.")
+        elif stmt == "STANDING_OVATION":
+            for tone_frequency in (523, 659, 784, 1047):
+                self._play_tone(tone_frequency, 120)
+            print("👏 The gallery rises for a standing ovation!")
+        elif stmt.startswith("PERHAPS "):
+            cond_expr = _statement_arg(stmt).replace(
+                " FACT_ESTABLISHED", ""
+            ).strip()
+            res = self.evaluate_expression(cond_expr)
+            if not res:
+                self.pc = self._next_perhaps_branch(self.pc - 1)
+        elif stmt.startswith("PERHAPS_ALSO "):
+            # Reached in sequence: an earlier branch already ran, so the
+            # rest of the motion is out of order.
+            self.pc = self._skip_to_block_end(self.pc - 1)
+        elif stmt == "STILL_IN_DENIAL":
+            self.pc = self._skip_to_block_end(self.pc - 1)
+        elif stmt == "END_PERHAPS":
+            pass
+        elif stmt.startswith("COALITION "):
+            subject = self.evaluate_expression(_statement_arg(stmt))
+            self.pc = self._enter_coalition(subject, self.pc - 1)
+        elif stmt.startswith("PLANK "):
+            # Reached in sequence: an earlier plank already matched.
+            self.pc = self._skip_to_block_end(self.pc - 1)
+        elif stmt == "MINORITY_REPORT":
+            self.pc = self._skip_to_block_end(self.pc - 1)
+        elif stmt == "END_COALITION":
+            pass
+        elif stmt.startswith("WHILE_CLASS_CONSCIOUS "):
+            cond_expr = _statement_arg(stmt)
+            if self.evaluate_expression(cond_expr):
+                self._loop_stack.append(
+                    {
+                        "type": "while",
+                        "cond": cond_expr,
+                        "start_index": self.pc - 1,
+                    }
+                )
+            else:
+                self.pc = self._skip_to_block_end(self.pc - 1)
+        elif stmt == "CONTINUE_ORGANIZING":
+            if self._loop_stack and self._loop_stack[-1]["type"] == "while":
+                top = self._loop_stack[-1]
+                if self.evaluate_expression(top["cond"]):
+                    self.pc = top["start_index"] + 1
+                else:
+                    self._loop_stack.pop()
+        elif stmt == "UNIVERSAL_HEALTHCARE":
+            self._healthcare_stack.append(self.pc - 1)
+        elif stmt == "EXECUTIVE_ORDER_BLOCKED":
+            if self._healthcare_stack:
+                self._healthcare_stack.pop()
+        elif stmt.startswith("COAST_TO_COAST "):
+            loop_def = _statement_arg(stmt)
+            step_val = 1
+            if " STEP " in loop_def:
+                loop_def, step_expr = loop_def.split(" STEP ")
+                step_val = self.evaluate_expression(step_expr)
+            if " UP_TO " not in loop_def:
+                raise LakeOntarioInterpreterError(
+                    "COAST_TO_COAST needs 'var = start UP_TO end'"
+                )
+            var_part, range_part = loop_def.split(" UP_TO ", 1)
+            if "=" not in var_part:
+                raise LakeOntarioInterpreterError(
+                    "COAST_TO_COAST needs 'var = start UP_TO end'"
+                )
+            if not step_val:
+                raise LakeOntarioInterpreterError(
+                    "STEP 0 would march in place forever. The committee "
+                    "recommends a step that actually moves."
+                )
+            var_name, start_expr = var_part.split("=", 1)
+            var_name = var_name.strip()
+            start_val = self.evaluate_expression(start_expr)
+            end_val = self.evaluate_expression(range_part)
+            self.variables[var_name] = start_val
+            self._loop_stack.append(
+                {
+                    "type": "for",
+                    "var": var_name,
+                    "end": end_val,
+                    "step": step_val,
+                    "start_index": self.pc - 1,
+                }
+            )
+        elif stmt == "THANK_YOU_EH":
+            if self._loop_stack and self._loop_stack[-1]["type"] == "for":
+                top = self._loop_stack[-1]
+                current_val = self.variables[top["var"]] + top["step"]
+                if (top["step"] > 0 and current_val <= top["end"]) or (
+                    top["step"] < 0 and current_val >= top["end"]
+                ):
+                    self.variables[top["var"]] = current_val
+                    self.pc = top["start_index"] + 1
+                else:
+                    self._loop_stack.pop()
+        elif stmt == "BREAK_FROM_CAUCUS":
+            if self._loop_stack:
+                top = self._loop_stack.pop()
+                self.pc = self.block_layout.close_of(
+                    top["start_index"], len(self.lines)
+                ) + 1
+        elif stmt == "NEXT_MOTION":
+            if self._loop_stack:
+                top = self._loop_stack[-1]
+                if top["type"] == "for":
+                    current_val = self.variables[top["var"]] + top["step"]
+                    if (top["step"] > 0 and current_val <= top["end"]) or (
+                        top["step"] < 0 and current_val >= top["end"]
+                    ):
+                        self.variables[top["var"]] = current_val
+                        self.pc = top["start_index"] + 1
+                    else:
+                        self._loop_stack.pop()
+                elif top["type"] == "while":
+                    if self.evaluate_expression(top["cond"]):
+                        self.pc = top["start_index"] + 1
+                    else:
+                        self._loop_stack.pop()
+                elif top["type"] == "foreach":
+                    top["index"] += 1
+                    if top["index"] < len(top["items"]):
+                        self.variables[top["var"]] = top["items"][top["index"]]
+                        self.pc = top["start_index"] + 1
+                    else:
+                        self._loop_stack.pop()
+                        # step past END_EACH; the loop is over
+                        self.pc = self.block_layout.close_of(
+                            top["start_index"], len(self.lines)
+                        ) + 1
+        elif stmt.startswith("SUBPOENA "):
+            target_text = _statement_arg(stmt)
+            if not target_text.lstrip("-").isdigit():
+                raise LakeOntarioInterpreterError(
+                    "SUBPOENA must target a numbered line"
+                )
+            target = int(target_text)
+            if target in self.line_map:
+                self.call_stack.append(self.pc)
+                self.pc = self.line_map[target]
+            else:
+                print(f"Subpoena Error: Line {target} ignored subpoena!")
+        elif stmt == "RETURN_TO_OTTAWA":
+            if self.call_stack:
+                self.pc = self.call_stack.pop()
+            else:
+                print("Error: RETURN_TO_OTTAWA with empty call stack, eh!")
+        elif stmt.startswith("GOLF_VACATION "):
+            seconds = self.evaluate_expression(_statement_arg(stmt))
+            try:
+                sec = float(seconds)
+            except (TypeError, ValueError):
+                raise LakeOntarioInterpreterError(
+                    "GOLF_VACATION requires a numeric number of seconds"
+                ) from None
+            print(f"⛳ Executive on Golf Vacation for {sec} seconds...")
+            time.sleep(min(sec, 2.0))
+        elif stmt.startswith("CLIMATE_EMERGENCY "):
+            msg = self.evaluate_expression(_statement_arg(stmt))
+            raise LakeOntarioInterpreterError(
+                f"CLIMATE EMERGENCY RAISED: {msg}"
+            )
+        elif stmt == "IMPEACH":
+            print("🏛️ IMPEACHMENT EFFECTIVE: Program terminated cleanly.")
+            return False
+        else:
+            head = stmt.split()[0] if stmt.split() else stmt
+            if head in KNOWN_KEYWORD_NAMES:
+                raise LakeOntarioInterpreterError(
+                    f"{head} requires an argument"
+                )
+            raise LakeOntarioInterpreterError(
+                f"unsupported statement '{head}'"
+            )
+        return True
 
     def _skip_to_block_end(self, marker_index):
         """Jump past the END marker of the block that owns this index."""
@@ -2318,7 +2404,19 @@ def _check_perhaps_condition(label, keyword, stmt):
             f"{label}: {keyword} requires 'FACT_ESTABLISHED' after the condition, "
             f"e.g. '{keyword} x >= 1 FACT_ESTABLISHED'"
         ]
+    if _uses_assignment_instead_of_equality(condition):
+        suggestion = condition.replace(" FACT_ESTABLISHED", "").replace("=", "==", 1)
+        return [
+            f"{label}: {keyword} assigns with '='. Use '==' to compare, e.g. "
+            f"'{keyword} {suggestion} FACT_ESTABLISHED'"
+        ]
     return []
+
+
+def _uses_assignment_instead_of_equality(stmt):
+    """True for 'PLANK = 5' (or a PERHAPS condition) where '==' was meant."""
+    masked = mask_string_literals(_statement_arg(stmt))
+    return bool(re.search(r"(^|[^=!<>])=(?!=)", masked))
 
 
 def _check_statement_shape(label, stmt):
@@ -2334,6 +2432,11 @@ def _check_statement_shape(label, stmt):
         problems.extend(_check_perhaps_condition(label, "PERHAPS_ALSO", stmt))
     elif stmt.startswith("PERHAPS "):
         problems.extend(_check_perhaps_condition(label, "PERHAPS", stmt))
+    elif stmt.startswith("PLANK ") and _uses_assignment_instead_of_equality(stmt):
+        problems.append(
+            f"{label}: PLANK assigns with '='. Use '==' to compare, e.g. "
+            "'PLANK == 5'."
+        )
     elif stmt.startswith("COAST_TO_COAST"):
         if " UP_TO " not in stmt:
             problems.append(f"{label}: COAST_TO_COAST statement must include 'UP_TO'")
@@ -2417,12 +2520,12 @@ def analyze_script(code):
             if line_number in seen_line_numbers:
                 errors.append(f"Line {line_number}: duplicate line number")
             seen_line_numbers.add(line_number)
-            stmt = match.group(2).strip()
+            stmt = strip_inline_comment(match.group(2).strip())
         else:
             line_number = None
-            stmt = stripped
+            stmt = strip_inline_comment(stripped)
 
-        if stmt.startswith("EXCUSE_ME"):
+        if not stmt or stmt.startswith("EXCUSE_ME"):
             continue
 
         parsed.append((line_number, stmt))
@@ -2444,7 +2547,16 @@ def analyze_script(code):
     layout = build_block_layout(parsed)
     errors.extend(layout.problems)
     errors.sort(key=_validation_sort_key)
-    warnings = sorted(layout.warnings, key=_validation_sort_key)
+
+    warnings = list(layout.warnings)
+    if parsed and not any(
+        stmt.startswith("LAND_ACKNOWLEDGEMENT ") for _line, stmt in parsed
+    ):
+        warnings.append(
+            "the record does not open with LAND_ACKNOWLEDGEMENT; "
+            "polite scripts usually do."
+        )
+    warnings.sort(key=_validation_sort_key)
     return errors, warnings
 
 
@@ -2463,7 +2575,7 @@ def load_repl_history(path):
     if not path or not os.path.exists(path):
         return []
     try:
-        with open(path, "r", encoding="utf-8") as handle:
+        with open(path, "r", encoding="utf-8-sig") as handle:
             lines = [line.rstrip("\n") for line in handle if line.strip()]
         return lines[-20:]
     except OSError:
@@ -2617,8 +2729,10 @@ def _handle_repl_file_command(statement, interpreter, history):
     return True
 
 
-def run_repl(trace=False, strict=False):
-    interpreter = LakeOntarioInterpreter(strict=strict, trace=trace)
+def run_repl(trace=False, strict=False, max_steps=None):
+    interpreter = LakeOntarioInterpreter(
+        strict=strict, trace=trace, max_steps=max_steps
+    )
     history_path = get_repl_history_path()
     history = load_repl_history(history_path)
     print("Lake Ontario BASIC REPL")
@@ -2736,12 +2850,17 @@ def run_repl(trace=False, strict=False):
         try:
             interpreter.load_script(script)
             interpreter.run()
+        except KeyboardInterrupt:
+            print("\n🏛️ Statement interrupted. The register is unchanged, eh.")
+            continue
         except SystemExit as exc:
             if exc.code == 0:
                 break
             # Runtime error already printed by run(); preserve variables across reset
             saved_vars = interpreter.variables.copy()
-            interpreter = LakeOntarioInterpreter(strict=strict, trace=trace)
+            interpreter = LakeOntarioInterpreter(
+                strict=strict, trace=trace, max_steps=max_steps
+            )
             interpreter.variables = saved_vars
         except (
             LakeOntarioInterpreterError,
@@ -2755,8 +2874,48 @@ def run_repl(trace=False, strict=False):
             print(f"🚨 REPL ERROR: {exc}")
 
 
+def resource_dir(name):
+    """Locate a bundled resource directory in the checkout or an installed package."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    candidates = [os.path.join(here, name)]
+    try:
+        import sysconfig
+
+        data_root = sysconfig.get_path("data")
+    except (ImportError, KeyError):  # pragma: no cover - exotic install schemes
+        data_root = None
+    if data_root:
+        candidates.append(os.path.join(data_root, "share", "lake-ontario-basic", name))
+        candidates.append(
+            os.path.join(data_root, "lake-ontario-basic", name)
+        )
+    for candidate in candidates:
+        if os.path.isdir(candidate):
+            return candidate
+    return candidates[0]
+
+
+def resource_file(name):
+    """Locate a bundled resource file (for example COMMANDS.md)."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    candidates = [os.path.join(here, name)]
+    try:
+        import sysconfig
+
+        data_root = sysconfig.get_path("data")
+    except (ImportError, KeyError):  # pragma: no cover - exotic install schemes
+        data_root = None
+    if data_root:
+        candidates.append(os.path.join(data_root, "share", "lake-ontario-basic", name))
+        candidates.append(os.path.join(data_root, "lake-ontario-basic", name))
+    for candidate in candidates:
+        if os.path.isfile(candidate):
+            return candidate
+    return candidates[0]
+
+
 def list_example_scripts():
-    examples_dir = os.path.join(os.path.dirname(__file__), "examples")
+    examples_dir = resource_dir("examples")
     if not os.path.isdir(examples_dir):
         print("No example scripts found.")
         return
@@ -2776,7 +2935,7 @@ def list_example_scripts():
 
 
 def _example_path(example_name):
-    examples_dir = os.path.join(os.path.dirname(__file__), "examples")
+    examples_dir = resource_dir("examples")
     candidate = example_name
     if not candidate.endswith(".lo"):
         candidate = f"{candidate}.lo"
@@ -2788,7 +2947,7 @@ def _read_script(path):
         print(f"Script not found: {path}")
         return None
     try:
-        with open(path, "r", encoding="utf-8") as handle:
+        with open(path, "r", encoding="utf-8-sig") as handle:
             return handle.read()
     except OSError as exc:
         print(f"Unable to read script: {exc}")
@@ -2804,15 +2963,23 @@ def _report_validation_errors(errors):
     )
 
 
-def _execute(code, trace=False, strict=False):
+def _execute(code, trace=False, strict=False, max_steps=None):
     """Run validated code and translate runtime failures into an exit code."""
-    interpreter = LakeOntarioInterpreter(strict=strict, trace=trace)
+    interpreter = LakeOntarioInterpreter(
+        strict=strict, trace=trace, max_steps=max_steps
+    )
     interpreter.load_script(code)
     try:
         interpreter.run()
     except LakeOntarioRuntimeError as exc:
         print(f"🚨 UNHANDLED DISASTER: {exc}")
         return 1
+    except KeyboardInterrupt:
+        print(
+            "\n🏛️ Session prorogued: Ctrl+C ended the reading. "
+            "Motion adjourned, eh."
+        )
+        return 130
     return 0
 
 
@@ -2836,7 +3003,7 @@ def check_script_file(script_path):
     return 0
 
 
-def run_script_file(script_path, trace=False, strict=False):
+def run_script_file(script_path, trace=False, strict=False, max_steps=None):
     code = _read_script(script_path)
     if code is None:
         return 1
@@ -2846,20 +3013,20 @@ def run_script_file(script_path, trace=False, strict=False):
         _report_validation_errors(errors)
         return 1
 
-    return _execute(code, trace=trace, strict=strict)
+    return _execute(code, trace=trace, strict=strict, max_steps=max_steps)
 
 
-def run_example_script(example_name, trace=False, strict=False):
+def run_example_script(example_name, trace=False, strict=False, max_steps=None):
     script_path = _example_path(example_name)
     if not os.path.isfile(script_path):
         print(f"Example script not found: {example_name}")
         return 1
-    return run_script_file(script_path, trace=trace, strict=strict)
+    return run_script_file(script_path, trace=trace, strict=strict, max_steps=max_steps)
 
 
 def print_usage():
     print(
-        "Usage: python3 interpreter.py [--trace] [--strict] "
+        "Usage: python3 interpreter.py [--trace] [--strict] [--max-steps N] "
         "[--repl | -i] [--check script.lo] [--list-examples] "
         "[--run-example example.lo] [--doctor] [--version] [script.lo]"
     )
@@ -2881,6 +3048,7 @@ def print_usage():
     print()
     print("  --trace   print an AUDIT TRAIL line before every executed statement")
     print("  --strict  start in HONEY_BADGER_MODE (undeclared names face the committee)")
+    print("  --max-steps N  stop after N statements (guards against runaway loops)")
 
 
 def run_environment_doctor(strict=False):
@@ -2889,10 +3057,9 @@ def run_environment_doctor(strict=False):
         "yes" if sys.prefix != sys.base_prefix or "VIRTUAL_ENV" in os.environ else "no"
     )
     tkinter_status = "ok" if tkinter is not None else "missing"
-    project_root = os.path.dirname(os.path.abspath(__file__))
 
     example_count = 0
-    examples_dir = os.path.join(project_root, "examples")
+    examples_dir = resource_dir("examples")
     try:
         example_count = len(
             [name for name in os.listdir(examples_dir) if name.endswith(".lo")]
@@ -2925,8 +3092,22 @@ def main(argv=None):
     strict = "--strict" in args
     args = [arg for arg in args if arg not in {"--trace", "--strict"}]
 
+    max_steps = None
+    if "--max-steps" in args:
+        index = args.index("--max-steps")
+        try:
+            max_steps = int(args[index + 1])
+        except (IndexError, ValueError):
+            print("🚨 --max-steps needs a whole number of statements, e.g. "
+                  "--max-steps 100000")
+            return 1
+        if max_steps <= 0:
+            print("🚨 --max-steps must be greater than zero.")
+            return 1
+        del args[index : index + 2]
+
     if not args:
-        run_repl(trace=trace, strict=strict)
+        run_repl(trace=trace, strict=strict, max_steps=max_steps)
         return 0
 
     command = args[0]
@@ -2953,10 +3134,12 @@ def main(argv=None):
         if len(args) != 2:
             print_usage()
             return 1
-        return run_example_script(args[1], trace=trace, strict=strict)
+        return run_example_script(
+            args[1], trace=trace, strict=strict, max_steps=max_steps
+        )
 
     if command in {"--repl", "-i"}:
-        run_repl(trace=trace, strict=strict)
+        run_repl(trace=trace, strict=strict, max_steps=max_steps)
         return 0
 
     if command == "--check":
@@ -2969,7 +3152,9 @@ def main(argv=None):
         print_usage()
         return 1
 
-    return run_script_file(args[0], trace=trace, strict=strict)
+    return run_script_file(
+        args[0], trace=trace, strict=strict, max_steps=max_steps
+    )
 
 
 if __name__ == "__main__":

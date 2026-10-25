@@ -2,6 +2,9 @@
 
 ## Statement Keywords
 
+- `EXCUSE_ME comment text`
+  - A comment. It may trail a statement on the same line; text inside string
+    literals is never treated as a comment.
 - `LAND_ACKNOWLEDGEMENT "territory"`
   - Mandatory respectful header for scripts.
 - `HONEY_BADGER_MODE`
@@ -241,7 +244,8 @@ band is still reachable.
 - `SCIENCE_ROUND(value, decimals=2)` — rounds numbers with scientific precision.
 - `READ_RESOURCE(path)` — reads a public resource file; raises an error when the
   file cannot be opened.
-- `PUBLISH_RESEARCH(path, content)` — writes a research file.
+- `PUBLISH_RESEARCH(path, content)` — writes a research file and returns
+  `EVIDENCE_BASED` / `ALTERNATIVE_FACT` for success.
 - `FORMAT_CURRENCY(value)` — formats numeric values as currency.
 - `CAD_CURRENCY(value)` — alias for `FORMAT_CURRENCY`.
 - `HONEY_BADGER_DEBUNK(claim)` — produces a satirical debunk message.
@@ -278,7 +282,8 @@ band is still reachable.
 - `STR_CONTAINS(text, substring)` — returns `EVIDENCE_BASED` if substring is found.
 - `STR_REPLACE(text, old, new)` — replaces all occurrences of old with new.
 - `STR_SPLIT(text, delimiter)` — splits text into a list on the given delimiter.
-- `TO_NUMBER(text)` — converts text to an integer or float.
+- `TO_NUMBER(text)` — converts text to an integer or float; non-numeric text
+  yields `0`.
 - `TO_TEXT(value)` — converts any value to its text representation.
 - `MATH_ABS(value)` — returns the absolute value.
 - `MATH_FLOOR(value)` — rounds down to the nearest integer.

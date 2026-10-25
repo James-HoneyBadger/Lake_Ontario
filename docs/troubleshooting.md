@@ -90,6 +90,40 @@ dead code. Fix by reordering the bands (strictest first) or deleting the
 redundant plank. If the plank depends on a variable, the check cannot tell and
 stays quiet by design.
 
+## 2b4. A script that never stops
+
+If a script runs forever, stop it with `Ctrl+C` (the CLI and REPL end politely)
+or cap it up front:
+
+```bash
+python3 interpreter.py --max-steps 100000 my_script.lo
+```
+
+```text
+🚨 UNHANDLED DISASTER: the committee stopped the debate after 100000 statements.
+   A loop may be running forever; check the COAST_TO_COAST or
+   WHILE_CLASS_CONSCIOUS condition, or raise the limit with --max-steps.
+```
+
+Common causes: a loop condition that never becomes false
+(`WHILE_CLASS_CONSCIOUS count EQUAL_PAY 3` means `count + 3`, always true), or a
+subroutine that calls its own line (`10 SUBPOENA 10`).
+
+## 2b5. A file saved by Windows Notepad is rejected
+
+Files saved as "UTF-8 with BOM" used to fail with an invisible character in the
+message. Scripts are now read with `utf-8-sig`, so both plain UTF-8 and BOM
+files work.
+
+## 2b6. Advisory: no land acknowledgement
+
+```text
+⚠️  ADVISORY the record does not open with LAND_ACKNOWLEDGEMENT; polite scripts usually do.
+```
+
+Every bundled example opens with one. The check only advises; add
+`LAND_ACKNOWLEDGEMENT "Territory"` near the top when it fits your script.
+
 ## 2c. Undeclared names in `HONEY_BADGER_MODE`
 
 Error:

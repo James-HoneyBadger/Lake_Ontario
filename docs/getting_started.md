@@ -48,6 +48,7 @@ python3 interpreter.py --repl
 python3 interpreter.py --check examples/hello.lo
 python3 interpreter.py --trace examples/hello.lo
 python3 interpreter.py --strict examples/hello.lo
+python3 interpreter.py --max-steps 100000 examples/hello.lo
 ```
 
 `--check` audits a script without running it: unsupported statements and
@@ -59,6 +60,9 @@ is handy when a loop is behaving like a filibuster.
 
 `--strict` starts in `HONEY_BADGER_MODE`: citing a name that was never
 `FACT_CHECK`-ed becomes an error instead of quietly reading as `0`.
+
+`--max-steps N` stops after N statements. Use it in classrooms and CI so a
+runaway loop fails with a diagnosis instead of hanging.
 
 `--doctor` reports Python, virtual environment, Tkinter, and example counts.
 Missing Tkinter is a warning (the CLI and examples still run); add `--strict`
