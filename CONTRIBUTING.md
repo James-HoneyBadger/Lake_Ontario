@@ -81,11 +81,19 @@ python3 interpreter.py --doctor
 python3 interpreter.py examples/hello.lo
 ```
 
-If you are changing parser or runtime behavior, also run the project test suite if present:
+If you are changing parser or runtime behavior, also run the project test suite:
 
 ```bash
+python3 -m pip install flake8 pytest   # if you do not have them yet
 python3 tests.py
+python3 -m pytest -q
+python3 -m flake8 .
 ```
+
+Continuous integration runs the lint, compile, environment doctor, example
+validation, and the full suite on Python 3.11, 3.12, and 3.13. Invalid
+expressions and broken blocks now fail loudly with a line number, so please
+keep new syntax honest: no silent fallbacks, no truthy placeholders.
 
 ### 4. Open a pull request
 

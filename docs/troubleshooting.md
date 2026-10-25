@@ -28,6 +28,75 @@ Fix:
 - ensure the statement uses the exact Lake Ontario keyword
 - confirm the line has a valid statement form
 
+The validator often offers a suggestion:
+
+```text
+Line 10: unsupported statement 'SHOW_VAR' — did you mean SHOW_VARS? The committee is happy to assist.
+```
+
+## 2a. Unknown function
+
+Error:
+
+```text
+Line 20: unknown function 'STR_UPPR' — did you mean STR_UPPER? The committee is happy to assist.
+```
+
+Fix:
+- function names are `UPPER_SNAKE_CASE`; take the suggestion when one is offered
+- check `COMMANDS.md` for the full built-in list
+
+## 2b. Unbalanced blocks
+
+Error:
+
+```text
+Line 10: PERHAPS opened here never reaches END_PERHAPS
+Line 20: END_PERHAPS without an open block
+```
+
+Fix:
+- every `PERHAPS` / `PERHAPS_ALSO` chain ends with `END_PERHAPS`
+- every `WHILE_CLASS_CONSCIOUS` ends with `CONTINUE_ORGANIZING`
+- every `COAST_TO_COAST` ends with `THANK_YOU_EH`
+- every `FOR_EACH` ends with `END_EACH`
+- remove stray terminators left behind by an edit
+
+## 2c. Undeclared names in `HONEY_BADGER_MODE`
+
+Error:
+
+```text
+Line 20: undeclared citizen 'votes_counted'. HONEY_BADGER_MODE requires a FACT_CHECK before anyone can cite it.
+```
+
+Fix:
+- declare the value first with `FACT_CHECK name = expression`
+- or leave `HONEY_BADGER_MODE` out: in the default mode an undeclared name
+  reads as `0`, which is the classic BASIC courtesy
+
+## 2d. `STEP 0` loops
+
+Error:
+
+```text
+Line 50: STEP 0 would march in place forever. The committee recommends a step that actually moves.
+```
+
+Fix: use a non-zero `STEP`, or omit it to count by one.
+
+## 2e. Input ran out (`EOFError`)
+
+Error:
+
+```text
+🚨 UNHANDLED DISASTER: Line 80: the town hall emptied out before an answer arrived
+```
+
+This happens when `TOWN_HALL` / `INPUT_BOX` runs without an interactive stdin
+(for example, piping from `/dev/null`). Run the script in a terminal, or supply
+`interpreter.set_input_callback(...)` when embedding the interpreter.
+
 ## 3. `FACT_CHECK` syntax errors
 
 This statement expects a variable assignment:
@@ -80,6 +149,19 @@ If the runtime raises a `CLIMATE_EMERGENCY` or another error:
 - wrap code in `UNIVERSAL_HEALTHCARE` / `EXECUTIVE_ORDER_BLOCKED`
 - check that values are valid before arithmetic
 - ensure quotations match around strings
+
+Every uncaught failure is reported as a single line and a non-zero exit code:
+
+```text
+🚨 UNHANDLED DISASTER: Line 30: CLIMATE EMERGENCY RAISED: boom
+```
+
+The interpreter raises `LakeOntarioRuntimeError` instead of calling
+`sys.exit()`, so the CLI reports the line, the GUI prints it in the output pane,
+and embedders can catch it.
+
+Use `--trace` to see exactly which statement the committee was reading when the
+disaster struck.
 
 ## 8. Missing editor in CLI IDE
 

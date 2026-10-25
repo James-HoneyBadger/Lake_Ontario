@@ -30,9 +30,14 @@ The docs, examples, and community guidelines all reinforce the same shape of pro
 
 ## CLI usage highlights
 
-The interpreter includes quick access to version info and example discovery:
+The interpreter includes quick access to version info, example discovery,
+static auditing, an execution audit trail, and strict mode:
 
 ```bash
 python3 interpreter.py --version
 python3 interpreter.py --list-examples
+python3 interpreter.py --check examples/hello.lo
+python3 interpreter.py --trace examples/hello.lo
+python3 interpreter.py --strict examples/hello.lo
+python3 interpreter.py --doctor --strict
 ```

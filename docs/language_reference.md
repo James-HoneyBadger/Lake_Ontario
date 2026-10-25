@@ -5,7 +5,8 @@
 - `LAND_ACKNOWLEDGEMENT "territory"`
   - Mandatory respectful header for scripts.
 - `HONEY_BADGER_MODE`
-  - Activates fearless execution mode.
+  - Activates fearless execution mode and strict evidence rules: reading a
+    name that was never `FACT_CHECK`-ed becomes an error instead of `0`.
 - `HONEY_BADGER_DONT_CARE "target"`
   - Declares bad-faith targets to ignore.
 - `BADGER_BITE expression`
@@ -13,7 +14,8 @@
 - `FACT_CHECK name = expression`
   - Assigns a value to a variable.
 - `BROADCAST_CBC expression`
-  - Outputs text or values to standard output.
+  - Outputs text or values to standard output. Comma-separated values print
+    space-separated, e.g. `BROADCAST_CBC "Fact", 7` prints `Fact 7`.
 - `TOWN_HALL variable_name`
   - Prompts the user and stores the input.
 - `INPUT_BOX variable_name`
@@ -163,6 +165,19 @@
 - `POWER_TO_THE_PEOPLE` -> `**`
 - `MAPLE_SYRUP` -> `%`
 - `MOONSHOT` -> `**`
+- `AND` / `OR` / `NOT` -> `and` / `or` / `not` (lowercase forms also work)
+
+## Expressions and Evidence
+
+Expressions are translated into Python and evaluated against a whitelist of
+built-in functions. Strings are protected before keyword rewriting, so
+`BROADCAST_CBC "WEALTH_TAX is a deduction"` keeps its original words.
+
+An expression that cannot be parsed, names an unknown function, or divides by
+zero raises an error with the source line instead of quietly evaluating to a
+placeholder. In the default mode, an undeclared name still reads as `0` (the
+classic BASIC courtesy); inside `HONEY_BADGER_MODE` (or with the `--strict`
+flag) it becomes an error.
 
 ## Literals
 
@@ -184,7 +199,8 @@
 - `SCIENCE_FACT(topic)` — returns peer-reviewed consensus statements.
 - `PEER_REVIEWED_SQRT(value)` — computes the square root.
 - `SCIENCE_ROUND(value, decimals=2)` — rounds numbers with scientific precision.
-- `READ_RESOURCE(path)` — reads a public resource file.
+- `READ_RESOURCE(path)` — reads a public resource file; raises an error when the
+  file cannot be opened.
 - `PUBLISH_RESEARCH(path, content)` — writes a research file.
 - `FORMAT_CURRENCY(value)` — formats numeric values as currency.
 - `CAD_CURRENCY(value)` — alias for `FORMAT_CURRENCY`.

@@ -1,4 +1,4 @@
-# Lake Ontario BASIC 1.0.0
+# Lake Ontario BASIC 1.2.0
 
 **Lake Ontario BASIC** is a whimsical, and satirical programming language built in the spirit of classic BASIC — infused with politeness, progressive values, and a **fearless Honey Badger attitude** that takes zero shit from MAGA spin, GOP propaganda, or oligarch intimidation.
 
@@ -14,7 +14,7 @@ In **Lake Ontario**, alternative facts don't compile, universal healthcare prote
 | :--- | :--- | :--- |
 | `EXCUSE_ME` | `REM` | Polite comment marker. |
 | `LAND_ACKNOWLEDGEMENT` | `INIT` / `HEADER` | Mandatory respectful header for all scripts. |
-| `HONEY_BADGER_MODE` | `PRAGMA` / `STRICT` | Activates zero-fear, take-no-shit execution mode. |
+| `HONEY_BADGER_MODE` | `PRAGMA` / `STRICT` | Activates zero-fear, take-no-shit execution mode — and strict evidence rules, so citing an undeclared name is an error. |
 | `HONEY_BADGER_DONT_CARE` | `IGNORE_WARNING` | Dismisses bad-faith lawsuits and intimidation attempts. |
 | `BADGER_BITE` | `ASSERT_OUTPUT` | Relentlessly outputs a fierce, unyielding truth statement. |
 | `FACT_CHECK` | `LET` / `=` | Assigns a variable to an evidence-verified value. |
@@ -135,6 +135,14 @@ In **Lake Ontario**, alternative facts don't compile, universal healthcare prote
 12. [examples/demo_data_analysis.lo](examples/demo_data_analysis.lo): End-to-end ward data analysis pipeline with per-capita metrics and report publication.
 13. [examples/demo_algorithms.lo](examples/demo_algorithms.lo): Classic CS patterns in Lake Ontario BASIC: Fibonacci, prime sieve, frequency counting, and subroutine grading.
 14. [examples/demo_policy_engine.lo](examples/demo_policy_engine.lo): Multi-plank policy scoring system with reusable subroutines and stress simulation.
+15. [examples/civic_caucus.lo](examples/civic_caucus.lo): Petitions, polls, compromises, and gazette notices from a very serious chamber.
+16. [examples/climate_and_care.lo](examples/climate_and_care.lo): Climate risk, treaty obligations, consultation, and funded community care.
+17. [examples/committee_chaos.lo](examples/committee_chaos.lo): Mutual aid registries inspected by `REGISTRY_GET` and scored against policy.
+18. [examples/community_data.lo](examples/community_data.lo): Median, totals, and evidence scoring over attendance figures.
+19. [examples/community_registry.lo](examples/community_registry.lo): Grouping citizens by region and counting the faithful.
+20. [examples/policy_standard_library.lo](examples/policy_standard_library.lo): Election meters, corporate fines, safety audits, land return, and energy targets.
+21. [examples/string_and_loops.lo](examples/string_and_loops.lo): String trimming, casing, casting, and loop control.
+22. [examples/worker_services.lo](examples/worker_services.lo): Wage theft recovery, housing, accessibility, and service waits.
 ---
 
 ## 4. Running Programs
@@ -162,9 +170,19 @@ python3 interpreter.py --version
 python3 interpreter.py --list-examples
 python3 interpreter.py --run-example hello
 python3 interpreter.py --doctor
+python3 interpreter.py --doctor --strict
 python3 interpreter.py --repl
 python3 interpreter.py --check examples/hello.lo
+python3 interpreter.py --trace examples/hello.lo
+python3 interpreter.py --strict examples/hello.lo
 ```
+
+- `--check` audits a script without running it: statement spelling,
+  `FACT_CHECK` shape, block balance (`PERHAPS`/`END_PERHAPS` and friends),
+  unknown function names with `did you mean` hints, and `STEP 0` loops.
+- `--trace` prints an `AUDIT TRAIL` line before every executed statement.
+- `--strict` starts in `HONEY_BADGER_MODE`, where citing an undeclared name is
+  an error rather than `0`.
 
 ## 4a. Interactive REPL
 
@@ -249,10 +267,16 @@ When the GUI starts, you can edit a script, run it, view output, and watch graph
 The current smoke-test suite is passing with the repository’s bundled checks:
 
 ```bash
-python3 tests.py
+python3 -m pip install flake8 pytest   # dev tooling, once
+python3 tests.py        # 51 checks
+python3 -m pytest -q    # same checks, pytest entry point
+python3 -m flake8 .     # style audit
 ```
 
-This confirms the interpreter, REPL, CLI flags, validation logic, and example scripts remain working as documented.
+This confirms the interpreter, REPL, CLI flags, validation logic, error
+reporting, strict mode, audit trail, and example scripts remain working as
+documented. Continuous integration runs the same checks on Python 3.11, 3.12,
+and 3.13.
 
 ## Documentation Suite
 

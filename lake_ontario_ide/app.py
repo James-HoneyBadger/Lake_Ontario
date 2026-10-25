@@ -196,15 +196,7 @@ def run_script(path):
     print(f"\nRunning {path}...\n")
     try:
         interpreter.run()
-    except (
-        LakeOntarioInterpreterError,
-        OSError,
-        ValueError,
-        TypeError,
-        ZeroDivisionError,
-        SyntaxError,
-        NameError,
-    ) as exc:
+    except (LakeOntarioInterpreterError, SystemExit, OSError) as exc:
         print(f"\nIDE runtime error: {exc}")
 
 

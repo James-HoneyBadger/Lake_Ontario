@@ -43,11 +43,26 @@ python3 interpreter.py --version
 python3 interpreter.py --list-examples
 python3 interpreter.py --run-example hello
 python3 interpreter.py --doctor
+python3 interpreter.py --doctor --strict
 python3 interpreter.py --repl
 python3 interpreter.py --check examples/hello.lo
+python3 interpreter.py --trace examples/hello.lo
+python3 interpreter.py --strict examples/hello.lo
 ```
 
-`--check` validates syntax and catches unsupported statements and duplicate line numbers.
+`--check` audits a script without running it: unsupported statements and
+duplicate line numbers, `FACT_CHECK` and `PERHAPS` shape, unbalanced blocks,
+unknown function names (with `did you mean` hints), and `STEP 0` loops.
+
+`--trace` prints an `AUDIT TRAIL` line before every executed statement, which
+is handy when a loop is behaving like a filibuster.
+
+`--strict` starts in `HONEY_BADGER_MODE`: citing a name that was never
+`FACT_CHECK`-ed becomes an error instead of quietly reading as `0`.
+
+`--doctor` reports Python, virtual environment, Tkinter, and example counts.
+Missing Tkinter is a warning (the CLI and examples still run); add `--strict`
+when you want the doctor to fail on it, for example in CI.
 
 ## Run the CLI IDE
 

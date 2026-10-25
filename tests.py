@@ -3,10 +3,16 @@
 
 import contextlib
 import os
+import subprocess
 import sys
+import tempfile
 from io import StringIO
 
-from interpreter import LakeOntarioInterpreter, LakeOntarioInterpreterError
+from interpreter import (
+    LakeOntarioInterpreter,
+    LakeOntarioInterpreterError,
+    LakeOntarioRuntimeError,
+)
 
 TEST_SCRIPTS = {
     "hello.lo": [
@@ -57,6 +63,17 @@ TEST_SCRIPTS = {
 }
 
 
+_TEMP_DIR = None
+
+
+def _temp_dir():
+    """Session-scoped scratch directory, kept out of the examples folder."""
+    global _TEMP_DIR
+    if _TEMP_DIR is None:
+        _TEMP_DIR = tempfile.mkdtemp(prefix="lake_ontario_tests_")
+    return _TEMP_DIR
+
+
 def run_test(script_name, expected_lines):
     path = os.path.join("examples", script_name)
     if not os.path.exists(path):
@@ -89,7 +106,7 @@ def run_test(script_name, expected_lines):
         sys.stdout.write(f"PASS {script_name}\n")
         sys.stdout.flush()
         return True
-    except SystemExit as exc:
+    except (SystemExit, LakeOntarioRuntimeError) as exc:
         sys.stdout.write(f"FAIL {script_name}: interpreter exited with {exc.code}\n")
         sys.stdout.flush()
         return False
@@ -230,7 +247,7 @@ def run_expanded_commands_test():
     try:
         with contextlib.redirect_stdout(output):
             interpreter.run()
-    except SystemExit:
+    except (SystemExit, LakeOntarioRuntimeError):
         sys.stdout.write("FAIL expanded-commands: interpreter exited unexpectedly\n")
         sys.stdout.flush()
         return False
@@ -262,7 +279,7 @@ def run_civic_data_commands_test():
     try:
         with contextlib.redirect_stdout(output):
             interpreter.run()
-    except SystemExit:
+    except (SystemExit, LakeOntarioRuntimeError):
         sys.stdout.write("FAIL civic-data: interpreter exited unexpectedly\n")
         sys.stdout.flush()
         return False
@@ -335,7 +352,7 @@ def run_graphics_and_sound_test():
 def run_validation_and_diagnostics_test():
     import subprocess
 
-    script_path = os.path.join("examples", "tmp_validation_check.lo")
+    script_path = os.path.join(_temp_dir(), "validation_check.lo")
     with open(script_path, "w", encoding="utf-8") as file:
         file.write('10 CLIMATE_EMERGENCY "oh no"\n')
 
@@ -350,7 +367,7 @@ def run_validation_and_diagnostics_test():
         sys.stdout.flush()
         return False
 
-    invalid_path = os.path.join("examples", "tmp_invalid_check.lo")
+    invalid_path = os.path.join(_temp_dir(), "invalid_check.lo")
     with open(invalid_path, "w", encoding="utf-8") as file:
         file.write("10 FACT_CHECK total = \n")
 
@@ -389,8 +406,6 @@ def run_validation_and_diagnostics_test():
         sys.stdout.flush()
         return False
 
-    os.remove(script_path)
-    os.remove(invalid_path)
     sys.stdout.write("PASS validation-diagnostics\n")
     sys.stdout.flush()
     return True
@@ -424,7 +439,7 @@ def run_string_operations_test():
     try:
         with contextlib.redirect_stdout(output):
             interpreter.run()
-    except SystemExit:
+    except (SystemExit, LakeOntarioRuntimeError):
         sys.stdout.write("FAIL string-ops: interpreter exited unexpectedly\n")
         sys.stdout.flush()
         return False
@@ -751,7 +766,7 @@ def run_loop_control_test():
     try:
         with contextlib.redirect_stdout(output):
             interpreter.run()
-    except SystemExit:
+    except (SystemExit, LakeOntarioRuntimeError):
         sys.stdout.write("FAIL loop-control: interpreter exited unexpectedly\n")
         sys.stdout.flush()
         return False
@@ -823,7 +838,7 @@ def run_for_each_test():
     try:
         with contextlib.redirect_stdout(output):
             interpreter.run()
-    except SystemExit:
+    except (SystemExit, LakeOntarioRuntimeError):
         sys.stdout.write("FAIL for-each: interpreter exited unexpectedly\n")
         sys.stdout.flush()
         return False
@@ -874,7 +889,7 @@ def run_perhaps_also_test():
     try:
         with contextlib.redirect_stdout(output):
             interpreter.run()
-    except SystemExit:
+    except (SystemExit, LakeOntarioRuntimeError):
         sys.stdout.write("FAIL perhaps-also: interpreter exited unexpectedly\n")
         sys.stdout.flush()
         return False
@@ -912,7 +927,7 @@ def run_math_and_random_test():
     try:
         with contextlib.redirect_stdout(output):
             interpreter.run()
-    except SystemExit:
+    except (SystemExit, LakeOntarioRuntimeError):
         sys.stdout.write("FAIL math-random: interpreter exited unexpectedly\n")
         sys.stdout.flush()
         return False
@@ -956,7 +971,7 @@ def run_list_ops_test():
     try:
         with contextlib.redirect_stdout(output):
             interpreter.run()
-    except SystemExit:
+    except (SystemExit, LakeOntarioRuntimeError):
         sys.stdout.write("FAIL list-ops: interpreter exited unexpectedly\n")
         sys.stdout.flush()
         return False
@@ -996,7 +1011,7 @@ def run_while_loop_test():
     try:
         with contextlib.redirect_stdout(output):
             interpreter.run()
-    except SystemExit:
+    except (SystemExit, LakeOntarioRuntimeError):
         sys.stdout.write("FAIL while-loop: interpreter exited unexpectedly\n")
         sys.stdout.flush()
         return False
@@ -1027,7 +1042,7 @@ def run_for_step_test():
     try:
         with contextlib.redirect_stdout(output):
             interpreter.run()
-    except SystemExit:
+    except (SystemExit, LakeOntarioRuntimeError):
         sys.stdout.write("FAIL for-step: interpreter exited unexpectedly\n")
         sys.stdout.flush()
         return False
@@ -1059,7 +1074,7 @@ def run_subroutine_test():
     try:
         with contextlib.redirect_stdout(output):
             interpreter.run()
-    except SystemExit:
+    except (SystemExit, LakeOntarioRuntimeError):
         sys.stdout.write("FAIL subroutine: interpreter exited unexpectedly\n")
         sys.stdout.flush()
         return False
@@ -1090,7 +1105,7 @@ def run_healthcare_guard_test():
     try:
         with contextlib.redirect_stdout(output):
             interpreter.run()
-    except SystemExit:
+    except (SystemExit, LakeOntarioRuntimeError):
         sys.stdout.write("FAIL healthcare-guard: interpreter exited unexpectedly\n")
         sys.stdout.flush()
         return False
@@ -1137,11 +1152,11 @@ def run_repl_multiline_block_test():
 def run_validation_strictness_test():
     import subprocess
 
-    duplicate_path = os.path.join("examples", "tmp_duplicate_lines.lo")
+    duplicate_path = os.path.join(_temp_dir(), "duplicate_lines.lo")
     with open(duplicate_path, "w", encoding="utf-8") as file:
         file.write('10 BROADCAST_CBC "a"\n10 BROADCAST_CBC "b"\n')
 
-    unknown_path = os.path.join("examples", "tmp_unknown_statement.lo")
+    unknown_path = os.path.join(_temp_dir(), "unknown_statement.lo")
     with open(unknown_path, "w", encoding="utf-8") as file:
         file.write("10 HOCKEY_STICK 7\n")
 
@@ -1160,9 +1175,6 @@ def run_validation_strictness_test():
         timeout=20,
     )
     unknown_output = unknown_proc.stdout + unknown_proc.stderr
-
-    os.remove(duplicate_path)
-    os.remove(unknown_path)
 
     if (
         duplicate_proc.returncode == 0
@@ -1209,7 +1221,7 @@ def run_missing_file_test():
 def run_malformed_list_command_test():
     import subprocess
 
-    bad_path = os.path.join("examples", "tmp_bad_list_command.lo")
+    bad_path = os.path.join(_temp_dir(), "bad_list_command.lo")
     with open(bad_path, "w", encoding="utf-8") as file:
         file.write("10 APPEND_TO roster\n")
 
@@ -1220,7 +1232,6 @@ def run_malformed_list_command_test():
         timeout=20,
     )
     output = proc.stdout + proc.stderr
-    os.remove(bad_path)
 
     if proc.returncode == 0 or "APPEND_TO" not in output.upper():
         sys.stdout.write(
@@ -1359,7 +1370,7 @@ def run_repl_persistence_clear_test():
 def run_validation_suggestion_test():
     import subprocess
 
-    bad_path = os.path.join("examples", "tmp_validation_suggestion.lo")
+    bad_path = os.path.join(_temp_dir(), "validation_suggestion.lo")
     with open(bad_path, "w", encoding="utf-8") as file:
         file.write('10 PERHAPS EVIDENCE_BASED\n20 BROADCAST_CBC "still here"\n')
 
@@ -1370,7 +1381,6 @@ def run_validation_suggestion_test():
         timeout=20,
     )
     output = proc.stdout + proc.stderr
-    os.remove(bad_path)
 
     if proc.returncode == 0 or "FACT_ESTABLISHED" not in output:
         sys.stdout.write(
@@ -1408,6 +1418,315 @@ def run_packaging_guard_test():
         return False
 
     sys.stdout.write("PASS packaging-guard\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_honest_expressions_test():
+    """Uppercase AND/OR/NOT work, and keywords inside strings keep their text."""
+    interpreter = LakeOntarioInterpreter()
+    script = """
+10 FACT_CHECK x = 3
+20 PERHAPS x > 5 AND x < 10 FACT_ESTABLISHED
+30 BROADCAST_CBC "FAIL: uppercase AND ran its body"
+40 END_PERHAPS
+50 PERHAPS x < 5 OR x > 100 FACT_ESTABLISHED
+60 BROADCAST_CBC "OR branch reached"
+70 END_PERHAPS
+80 PERHAPS NOT x > 5 FACT_ESTABLISHED
+90 BROADCAST_CBC "NOT branch reached"
+100 END_PERHAPS
+110 BROADCAST_CBC "WEALTH_TAX stays literal"
+120 BROADCAST_CBC "say \\"hi\\" eh"
+""".strip()
+
+    interpreter.load_script(script)
+    output = StringIO()
+    with contextlib.redirect_stdout(output):
+        interpreter.run()
+    result = output.getvalue()
+
+    checks = [
+        ("uppercase AND", "FAIL: uppercase AND ran its body" not in result),
+        ("uppercase OR", "OR branch reached" in result),
+        ("uppercase NOT", "NOT branch reached" in result),
+        ("string keywords", "WEALTH_TAX stays literal" in result),
+        ("escaped quotes", 'say "hi" eh' in result),
+    ]
+    for label, ok in checks:
+        if not ok:
+            sys.stdout.write(f"FAIL honest-expressions: {label} misbehaved\n{result}\n")
+            sys.stdout.flush()
+            return False
+
+    sys.stdout.write("PASS honest-expressions\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_expression_failure_test():
+    """A broken expression must be an error, never a truthy alternative fact."""
+    interpreter = LakeOntarioInterpreter()
+    try:
+        interpreter.evaluate_expression("NONSENSE_FUNCTION(1)")
+    except LakeOntarioInterpreterError as exc:
+        if "NONSENSE_FUNCTION" not in str(exc):
+            sys.stdout.write(f"FAIL expression-failure: unclear error: {exc}\n")
+            sys.stdout.flush()
+            return False
+    else:
+        sys.stdout.write(
+            "FAIL expression-failure: unknown function returned a value "
+            "instead of failing\n"
+        )
+        sys.stdout.flush()
+        return False
+
+    script = """
+10 FACT_CHECK bogus = NONSENSE_FUNCTION(1)
+20 PERHAPS bogus FACT_ESTABLISHED
+30 BROADCAST_CBC "FAIL: alternative fact was treated as true"
+40 END_PERHAPS
+""".strip()
+    interpreter = LakeOntarioInterpreter()
+    interpreter.load_script(script)
+    output = StringIO()
+    try:
+        with contextlib.redirect_stdout(output):
+            interpreter.run()
+    except LakeOntarioRuntimeError:
+        pass
+    else:
+        sys.stdout.write("FAIL expression-failure: broken expression did not abort\n")
+        sys.stdout.flush()
+        return False
+
+    if "FAIL: alternative fact" in output.getvalue():
+        sys.stdout.write("FAIL expression-failure: failed condition ran its body\n")
+        sys.stdout.flush()
+        return False
+
+    try:
+        interpreter.evaluate_expression('READ_RESOURCE("examples/no_such_file.txt")')
+    except LakeOntarioInterpreterError:
+        pass
+    else:
+        sys.stdout.write(
+            "FAIL expression-failure: an unreadable resource returned a value\n"
+        )
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS expression-failure\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_block_balance_test():
+    """--check must reject unclosed and stray blocks, and STEP 0 loops."""
+    cases = {
+        "unclosed.lo": ('10 PERHAPS EVIDENCE_BASED FACT_ESTABLISHED\n', "END_PERHAPS"),
+        "stray.lo": ('10 END_PERHAPS\n20 BROADCAST_CBC "hi"\n', "END_PERHAPS"),
+        "step-zero.lo": (
+            "10 COAST_TO_COAST i = 1 UP_TO 5 STEP 0\n20 THANK_YOU_EH\n",
+            "STEP 0",
+        ),
+    }
+    for name, (source, expected) in cases.items():
+        path = os.path.join(_temp_dir(), name)
+        with open(path, "w", encoding="utf-8") as file:
+            file.write(source)
+        proc = subprocess.run(
+            [sys.executable, "interpreter.py", "--check", path],
+            text=True,
+            capture_output=True,
+            timeout=20,
+        )
+        output = proc.stdout + proc.stderr
+        if proc.returncode == 0 or expected not in output:
+            sys.stdout.write(
+                f"FAIL block-balance: {name} was not rejected cleanly\n{output}\n"
+            )
+            sys.stdout.flush()
+            return False
+
+    sys.stdout.write("PASS block-balance\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_correction_suggestion_test():
+    """Typos get a friendly 'did you mean' instead of a silent mystery."""
+    path = os.path.join(_temp_dir(), "typos.lo")
+    with open(path, "w", encoding="utf-8") as file:
+        file.write('10 BROADCAST_CBC STR_UPPR("x")\n')
+    proc = subprocess.run(
+        [sys.executable, "interpreter.py", "--check", path],
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    output = proc.stdout + proc.stderr
+    if proc.returncode == 0 or "STR_UPPER" not in output:
+        sys.stdout.write(f"FAIL corrections: function typo not corrected\n{output}\n")
+        sys.stdout.flush()
+        return False
+
+    with open(path, "w", encoding="utf-8") as file:
+        file.write("10 SHOW_VAR\n")
+    proc = subprocess.run(
+        [sys.executable, "interpreter.py", "--check", path],
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    output = proc.stdout + proc.stderr
+    if proc.returncode == 0 or "SHOW_VARS" not in output:
+        sys.stdout.write(f"FAIL corrections: statement typo not corrected\n{output}\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS corrections\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_strict_mode_test():
+    """HONEY_BADGER_MODE and --strict make undeclared names a real error."""
+    path = os.path.join(_temp_dir(), "strict.lo")
+    with open(path, "w", encoding="utf-8") as file:
+        file.write("10 BROADCAST_CBC undeclared_name\n")
+
+    lax = subprocess.run(
+        [sys.executable, "interpreter.py", path],
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    if lax.returncode != 0 or "0" not in lax.stdout:
+        sys.stdout.write("FAIL strict-mode: default mode should read undeclared as 0\n")
+        sys.stdout.flush()
+        return False
+
+    strict = subprocess.run(
+        [sys.executable, "interpreter.py", "--strict", path],
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    if strict.returncode == 0 or "undeclared citizen" not in strict.stdout:
+        sys.stdout.write(
+            f"FAIL strict-mode: --strict did not object\n{strict.stdout}{strict.stderr}\n"
+        )
+        sys.stdout.flush()
+        return False
+
+    with open(path, "w", encoding="utf-8") as file:
+        file.write("10 HONEY_BADGER_MODE\n20 BROADCAST_CBC undeclared_name\n")
+    pragma = subprocess.run(
+        [sys.executable, "interpreter.py", path],
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    if pragma.returncode == 0 or "undeclared citizen" not in pragma.stdout:
+        sys.stdout.write(
+            f"FAIL strict-mode: HONEY_BADGER_MODE did not bite\n{pragma.stdout}\n"
+        )
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS strict-mode\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_empty_stdin_test():
+    """A closed stdin should not dump a traceback at the citizen."""
+    proc = subprocess.run(
+        [sys.executable, "interpreter.py", "examples/gui_demo.lo"],
+        input="",
+        text=True,
+        capture_output=True,
+        timeout=30,
+    )
+    output = proc.stdout + proc.stderr
+    if proc.returncode == 0:
+        sys.stdout.write("FAIL empty-stdin: expected a non-zero exit code\n")
+        sys.stdout.flush()
+        return False
+    if "Traceback" in output or "town hall emptied out" not in output:
+        sys.stdout.write(f"FAIL empty-stdin: unfriendly failure\n{output}\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS empty-stdin\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_trace_mode_test():
+    """--trace prints an audit trail without disturbing program output."""
+    proc = subprocess.run(
+        [sys.executable, "interpreter.py", "--trace", "examples/hello.lo"],
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    output = proc.stdout + proc.stderr
+    if proc.returncode != 0 or "AUDIT TRAIL" not in output:
+        sys.stdout.write(f"FAIL trace: no audit trail produced\n{output}\n")
+        sys.stdout.flush()
+        return False
+    if "Welcome to Lake Ontario BASIC" not in output:
+        sys.stdout.write("FAIL trace: program output went missing\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS trace\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_doctor_tolerance_test():
+    """Missing tkinter is a warning for the CLI, a failure only under --strict."""
+    import interpreter as module
+
+    original = module.tkinter
+    module.tkinter = None
+    try:
+        output = StringIO()
+        with contextlib.redirect_stdout(output):
+            lax = module.run_environment_doctor(strict=False)
+            strict = module.run_environment_doctor(strict=True)
+    finally:
+        module.tkinter = original
+
+    text = output.getvalue()
+    if lax != 0 or strict != 1 or "Tkinter is missing" not in text:
+        sys.stdout.write(f"FAIL doctor: lax={lax} strict={strict} output={text!r}\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS doctor\n")
+    sys.stdout.flush()
+    return True
+
+
+def run_broadcast_rendering_test():
+    """Multiple BROADCAST_CBC values read like prose, not like a Python tuple."""
+    interpreter = LakeOntarioInterpreter()
+    interpreter.load_script('10 BROADCAST_CBC "a", "b", 3\n')
+    output = StringIO()
+    with contextlib.redirect_stdout(output):
+        interpreter.run()
+    result = output.getvalue().strip()
+    if result != "a b 3":
+        sys.stdout.write(f"FAIL broadcast-rendering: got {result!r}\n")
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS broadcast-rendering\n")
     sys.stdout.flush()
     return True
 
@@ -1456,6 +1775,15 @@ if __name__ == "__main__":
     all_passed = run_repl_persistence_clear_test() and all_passed
     all_passed = run_validation_suggestion_test() and all_passed
     all_passed = run_packaging_guard_test() and all_passed
+    all_passed = run_honest_expressions_test() and all_passed
+    all_passed = run_expression_failure_test() and all_passed
+    all_passed = run_block_balance_test() and all_passed
+    all_passed = run_correction_suggestion_test() and all_passed
+    all_passed = run_strict_mode_test() and all_passed
+    all_passed = run_empty_stdin_test() and all_passed
+    all_passed = run_trace_mode_test() and all_passed
+    all_passed = run_doctor_tolerance_test() and all_passed
+    all_passed = run_broadcast_rendering_test() and all_passed
 
     if all_passed:
         sys.stdout.write("\nAll tests passed.\n")

@@ -28,7 +28,6 @@ from tkinter import scrolledtext, messagebox, filedialog, simpledialog
 
 from interpreter import (
     LakeOntarioInterpreter,
-    LakeOntarioInterpreterError,
     validate_script as validate_script_text,
 )
 
@@ -745,24 +744,25 @@ class LakeOntarioApp:
         try:
             with contextlib.redirect_stdout(buffer):
                 self.interpreter.run()
-        except (
-            LakeOntarioInterpreterError,
-            OSError,
-            ValueError,
-            TypeError,
-            ZeroDivisionError,
-            SyntaxError,
-            NameError,
-        ) as exc:
-            self.output_text.insert(tk.END, buffer.getvalue())
-            message = f"🚨 Runtime error: {exc}"
-            self.output_text.insert(tk.END, f"\n{message}\n")
-            self.error_history.append(message)
-            self.set_status("Execution failed.", is_error=True)
+        except SystemExit as exc:
+            # The interpreter reports script failures by raising; a SystemExit
+            # here means an embedded path still called sys.exit().
+            self._show_run_failure(buffer, exc)
+        except Exception as exc:
+            self._show_run_failure(buffer, exc)
         else:
             self.output_text.insert(tk.END, buffer.getvalue())
             self.output_text.insert(tk.END, "\n\u2705 Program completed.\n")
             self.set_status("Execution completed.")
+
+    def _show_run_failure(self, buffer, exc):
+        """Surface buffered output plus the failure, so nothing is swallowed."""
+        self.output_text.insert(tk.END, buffer.getvalue())
+        detail = str(exc) if str(exc) else exc.__class__.__name__
+        message = f"🚨 Runtime error: {detail}"
+        self.output_text.insert(tk.END, f"\n{message}\n")
+        self.error_history.append(message)
+        self.set_status("Execution failed.", is_error=True)
 
     def validate_script(self):
         """Run static validation on the current script and show any issues."""

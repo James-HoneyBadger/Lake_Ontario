@@ -43,6 +43,54 @@ polygons, triangles, pen width) plus the sound suite (`PLAY_TONE`,
 `PLAY_SOUND_FILE`, `STOP_SOUND`, and the themed `HONEY_BADGER_GROWL` /
 `TOWN_HALL_BELL` / `STANDING_OVATION` cues).
 
+### `demo_algorithms.lo`
+Classic computer science in a civic accent: Fibonacci, a prime sieve,
+frequency counting, and a `SUBPOENA` grading subroutine.
+
+### `demo_data_analysis.lo`
+An end-to-end ward analysis pipeline: sorting, averages, per-capita metrics,
+and a published report document.
+
+### `demo_new_features.lo`
+A focused showcase of `FOR_EACH`, `PERHAPS_ALSO`, string utilities,
+`BREAK_FROM_CAUCUS` / `NEXT_MOTION`, type casting, and list indexing.
+
+### `civic_caucus.lo`
+A short tour of parliamentary absurdity: `CITIZEN_PETITION`, `HEAR_HEAR`,
+`POLL_THE_PEOPLE`, `CIVIC_COMPROMISE`, and `PARLIAMENT_GAZETTE`.
+
+### `climate_and_care.lo`
+Climate risk scoring, science consensus, treaty obligations, consultation
+requirements, and a funded community care plan.
+
+### `committee_chaos.lo`
+Builds a `MUTUAL_AID_REGISTRY`, inspects it with `REGISTRY_KEYS` /
+`REGISTRY_VALUES` / `REGISTRY_GET`, and scores a policy against it.
+
+### `community_data.lo`
+Median, total, evidence scoring, and `CITIZEN_ANY` / `CITIZEN_ALL` over a
+list of attendance figures.
+
+### `community_registry.lo`
+Groups citizens by region with `GROUP_BY_CITIZENS` and counts entries with
+`COUNT_BY_CITIZENS`.
+
+### `demo_policy_engine.lo`
+A multi-branch policy scoring engine with `PERHAPS_ALSO` chains, a `WHILE`
+loop, `RANDOM_DEMOCRACY`, `UNIVERSAL_HEALTHCARE`, and
+`PUBLISH_RESEARCH_FILE`.
+
+### `policy_standard_library.lo`
+The policy built-ins in one place: rigged-election meter, voter suppression
+alert, corporate fines, safety audits, land return, and renewable targets.
+
+### `string_and_loops.lo`
+String trimming, case conversion, casting, and loop control in one script.
+
+### `worker_services.lo`
+Wage theft recovery, affordable housing, accessibility audits,
+accommodations, service waits, and emissions reductions.
+
 ## Learning path
 
 1. Start with `hello.lo` to confirm the interpreter works.

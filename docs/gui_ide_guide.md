@@ -75,6 +75,14 @@ Supported GUI graphics commands:
 - `TOWN_HALL` prompts in the CLI IDE
 - `INPUT_BOX` prompts in the GUI IDE
 
+## Error Reporting
+
+A script that fails at runtime stops at the offending line and reports it in the
+output pane, marked with `🚨 Runtime error:`. Buffered output up to that point is
+kept, and the IDE stays open so you can fix the script and run it again. Use
+**Debug → Validate Script** in the GUI to run the same audit as `--check`, including unknown
+function names with `did you mean` hints and unbalanced block detection.
+
 ## Notes
 
 The GUI IDE maintains a live graphics canvas while your script executes. If you change canvas colors mid-script, the new values apply to subsequent draw operations.

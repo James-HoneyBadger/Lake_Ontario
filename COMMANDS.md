@@ -13,7 +13,8 @@
 - `FACT_CHECK name = expression`
   - Assigns a value to a variable.
 - `BROADCAST_CBC expression`
-  - Outputs text or values to standard output.
+  - Outputs text or values to standard output. Comma-separated values print
+    space-separated, e.g. `BROADCAST_CBC "Fact", 7` prints `Fact 7`.
 - `TOWN_HALL variable_name`
   - Prompts the user and stores the input.
 - `PERHAPS condition FACT_ESTABLISHED`
@@ -46,6 +47,18 @@
   - Terminates program execution.
 - `PUBLISH_RESEARCH_FILE path, content`
   - Writes content to disk as a report.
+- `HEAR_HEAR point`
+  - Records a point the chamber reluctantly agrees with.
+- `CITIZEN_PETITION text`
+  - Files a petition and sends it to a very serious committee.
+- `VOTE_RECORDED voter, election, choice`
+  - Records a ballot in the civic registry.
+- `PETITION_SIGNATURE_COLLECTED name, petition`
+  - Adds a signature to a petition's supporting documents.
+- `TESTIMONY_ADDED witness, statement`
+  - Files testimony and opens a fresh binder.
+- `MOTION_PASSED`
+  - Confirms that the public interest defeated administrative fog.
 
 ### Farcical Policy Statements
 - `FAT_CATS_TAX amount`
@@ -170,7 +183,8 @@
 - `SCIENCE_ROUND(value, decimals=2)`
   - Rounds numbers with scientific precision.
 - `READ_RESOURCE(path)`
-  - Reads a public resource file.
+  - Reads a public resource file. Raises an error (which
+    `UNIVERSAL_HEALTHCARE` can catch) when the file cannot be opened.
 - `PUBLISH_RESEARCH(path, content)`
   - Writes a research file, returning True/False.
 - `FORMAT_CURRENCY(value)`
@@ -261,6 +275,68 @@
   - Returns the numeric average of list values.
 - `COLLECTIVE_APPEND(target, item)`
   - Returns a list with item appended to target.
+- `MEDIAN_CITIZENS(values)`
+  - Returns the median of a collection of numbers.
+- `CITIZEN_SUM(values)`
+  - Returns the numeric total of a collection.
+- `CITIZEN_ANY(values)`
+  - Returns `EVIDENCE_BASED` when any value is truthy.
+- `CITIZEN_ALL(values)`
+  - Returns `EVIDENCE_BASED` when every value is truthy.
+- `GROUP_BY_CITIZENS(values, categories)`
+  - Builds a registry grouping values by matching category.
+- `COUNT_BY_CITIZENS(values, target)`
+  - Counts how many values equal target.
+- `REGISTRY_GET(registry, key, default)`
+  - Reads a key from a registry, falling back to default.
+- `REGISTRY_KEYS(registry)`
+  - Returns a list of registry keys.
+- `REGISTRY_VALUES(registry)`
+  - Returns a list of registry values.
+- `EVIDENCE_SCORE(claim, evidence)`
+  - Scores a claim 0–100 based on how much evidence it cites.
+- `POLICY_SCORE(policy, criteria)`
+  - Scores a policy 0–100 against its review criteria.
+- `PARLIAMENT_GAZETTE(title, content)`
+  - Records an official parliamentary notice.
+- `POLL_THE_PEOPLE(question, agreement)`
+  - Reports a clamped (0–100%) public agreement figure.
+- `CIVIC_COMPROMISE(proposal_a, proposal_b)`
+  - Merges two proposals and refers the result to three committees.
+- `RIGGED_ELECTION_METER(claim)`
+  - Reviews election claims and asks for evidence first.
+- `VOTER_SUPPRESSION_ALERT(tactic)`
+  - Flags a suppression tactic and calls for expanded access.
+- `CORPORATE_FINE(company, violation, amount)`
+  - Assesses a fine and asks shareholders to read the receipt.
+- `WORKPLACE_SAFETY_AUDIT(workplace)`
+  - Requires hazard checks, paid training, and safe reporting.
+- `INDIGENOUS_LAND_RETURN(territory, people)`
+  - Records a land-return commitment requiring consultation and consent.
+- `INDIGENOUS_CONSULTATION_REQUIRED(project)`
+  - Requires early, meaningful consultation and consent.
+- `TREATY_OBLIGATION_TRACKER(treaty)`
+  - Tracks ongoing treaty review, accountability, and action.
+- `RENEWABLE_ENERGY_TARGET(percent, year)`
+  - States a clean-energy target as a percentage and year.
+- `WAGE_THEFT_RECOVERY(amount)`
+  - Returns recovered wages to workers.
+- `AFFORDABLE_HOUSING_BUILT(units, location)`
+  - Announces affordable homes, key ceremony included.
+- `ACCESSIBILITY_AUDIT(building)`
+  - Lists the access features a building still owes the public.
+- `ACCOMMODATION_APPROVED(request)`
+  - Approves an accommodation; dignity is not optional.
+- `PUBLIC_SERVICE_WAIT(service, minutes)`
+  - Publishes a service queue wait time.
+- `EMISSIONS_REDUCED(baseline, current)`
+  - Computes the percentage reduction against a baseline.
+- `CLIMATE_RISK_SCORE(place, score)`
+  - Reports a clamped 0–100 climate risk score.
+- `SCIENCE_CONSENSUS(topic)`
+  - Returns the peer-reviewed consensus for a known topic.
+- `COMMUNITY_CARE_PLAN(need, response)`
+  - Pairs a community need with a funded care response.
 
 ## Operator Aliases
 
@@ -271,6 +347,7 @@
 - `POWER_TO_THE_PEOPLE` -> `**`
 - `MAPLE_SYRUP` -> `%`
 - `MOONSHOT` -> `**`
+- `AND` / `OR` / `NOT` -> `and` / `or` / `not` (lowercase forms also work)
 
 ## Literals
 
