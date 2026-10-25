@@ -203,18 +203,24 @@ class ReplaceDialog:
         self.editor.clear_search_highlights()
 
 
-def show_validation_results(parent, errors):
-    """Show LAKE ONTARIO BASIC ``validate_script`` results in a dialog."""
-    if not errors:
+def show_validation_results(parent, errors, warnings=()):
+    """Show LAKE ONTARIO BASIC ``analyze_script`` results in a dialog."""
+    warnings = list(warnings or ())
+    if not errors and not warnings:
         messagebox.showinfo(
             "Validate Script", "✅ No issues found — evidence-based code confirmed!"
         )
         return
 
-    history_text = "Validation Issues:\n\n" + "\n".join(f"• {e}" for e in errors)
+    sections = []
+    if errors:
+        sections.append("Validation Issues:\n\n" + "\n".join(f"• {e}" for e in errors))
+    if warnings:
+        sections.append("Advisories:\n\n" + "\n".join(f"• {w}" for w in warnings))
+    history_text = "\n\n".join(sections)
 
     window = tk.Toplevel(parent)
-    window.title("Validation Issues")
+    window.title("Validation Issues" if errors else "Validation Advisories")
     window.geometry("600x400")
 
     text_widget = scrolledtext.ScrolledText(window, wrap=tk.WORD)

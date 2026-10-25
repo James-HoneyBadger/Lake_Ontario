@@ -30,7 +30,8 @@
 - `PLANK >= value` (also `<=`, `==`, `!=`, `>`, `<`)
   - A branch matched by comparison, for banded decisions.
 - `MINORITY_REPORT`
-  - Default branch of a `COALITION` when no `PLANK` matches.
+  - Default branch of a `COALITION` when no `PLANK` matches. Any `PLANK` after
+    it is unreachable and rejected by `--check`.
 - `END_COALITION`
   - Closes a `COALITION` block.
 - `WHILE_CLASS_CONSCIOUS condition`

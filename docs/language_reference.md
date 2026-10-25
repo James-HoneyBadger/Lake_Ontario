@@ -213,6 +213,12 @@ A `PLANK` with no operator matches by equality (`PLANK "North"`). Comparison
 planks are checked in the order written, so put the strictest band first. If
 nothing matches and there is no `MINORITY_REPORT`, the whole block is skipped.
 
+`--check` adds an advisory when a `PLANK` can never match because earlier planks
+already cover every value it allows — for example `PLANK >= 60` listed after
+`PLANK >= 40`. Advisories never fail validation; they just point out the shadow.
+Ordering the other way (`>= 60` then `>= 40`) stays quiet, because the lower
+band is still reachable.
+
 ## Literals
 
 - `EVIDENCE_BASED` -> `True`

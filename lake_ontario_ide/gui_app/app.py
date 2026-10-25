@@ -28,7 +28,7 @@ from tkinter import scrolledtext, messagebox, filedialog, simpledialog
 
 from interpreter import (
     LakeOntarioInterpreter,
-    validate_script as validate_script_text,
+    analyze_script as analyze_script_text,
 )
 
 from .features.syntax_highlighting import SyntaxHighlightingText, LineNumberedText
@@ -769,8 +769,8 @@ class LakeOntarioApp:
         from .dialogs import show_validation_results
 
         code = self.editor_text.get("1.0", tk.END)
-        errors = validate_script_text(code)
-        show_validation_results(self.root, errors)
+        errors, warnings = analyze_script_text(code)
+        show_validation_results(self.root, errors, warnings)
 
     def show_error_history(self):
         from .dialogs import show_error_history

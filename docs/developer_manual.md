@@ -74,6 +74,17 @@ statements to a file), alongside `HISTORY`, `REPLAY N`, `!N`, `SHOW_VARS`,
 `SHOW_EVIDENCE_LOG`, and `CANCEL`. When stdin is a terminal, `readline`
 provides arrow-key history and Tab completion of keywords and built-ins.
 
+`analyze_script(code)` returns `(errors, warnings)`, while `validate_script`
+keeps returning errors only. Warnings are advisory: `--check`, the GUI's
+Validate dialog, and the REPL's `CHECK` show them, and they never change an exit
+code. `build_block_layout` fills `layout.warnings` via `advise()`.
+
+`_plank_coverage` turns a statically knowable `PLANK` into an interval (or a
+text value), `_merge_coverage` unions the intervals, and `_shadowing_line`
+reports the first earlier plank that already covers the whole candidate. Planks
+that depend on variables are skipped, so the check can miss a shadow but never
+invents one.
+
 `COALITION` resolves its branches at the opener: `_enter_coalition` walks the
 chain once, asking `_plank_matches` whether each `PLANK` matches (equality, or a
 leading `>=` / `<=` / `==` / `!=` / `>` / `<`), and returns the winning body or

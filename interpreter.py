@@ -257,6 +257,107 @@ def _line_label(line_number):
     return f"Line {line_number}" if line_number is not None else "Line ?"
 
 
+PLANK_LITERAL_PATTERN = re.compile(
+    r"^(?P<operator>>=|<=|==|!=|>|<)?\s*(?P<value>-?\d+(?:\.\d+)?)$"
+)
+
+
+def _plank_coverage(plank_stmt):
+    """Describe the values a PLANK can match, when that is knowable statically.
+
+    Returns ``("numeric", low, low_inclusive, high, high_inclusive)``,
+    ``("text", value)``, or None when the plank depends on a variable.
+    """
+    argument = _statement_arg(plank_stmt)
+    match = PLANK_LITERAL_PATTERN.match(argument)
+    if match:
+        operator = match.group("operator") or "=="
+        value = float(match.group("value"))
+        if operator == "==":
+            return ("numeric", value, True, value, True)
+        if operator == ">=":
+            return ("numeric", value, True, math.inf, True)
+        if operator == ">":
+            return ("numeric", value, False, math.inf, True)
+        if operator == "<=":
+            return ("numeric", -math.inf, True, value, True)
+        if operator == "<":
+            return ("numeric", -math.inf, True, value, False)
+        return None  # "!=" covers two disjoint ranges; not worth tracking
+
+    try:
+        literal = ast.literal_eval(argument)
+    except (SyntaxError, ValueError):
+        return None
+    if isinstance(literal, str):
+        return ("text", literal)
+    return None
+
+
+def _merge_coverage(entries):
+    """Merge (line_number, numeric coverage) pairs into contiguous ranges."""
+    merged = []
+    for line_number, spec in sorted(entries, key=lambda item: item[1][1]):
+        _, low, low_inc, high, high_inc = spec
+        if merged:
+            last_spec, sources = merged[-1]
+            _, start, start_inc, end, end_inc = last_spec
+            touches = low < end or (low == end and (end_inc or low_inc))
+            if touches:
+                if high > end or (high == end and high_inc):
+                    merged[-1] = (
+                        ("numeric", start, start_inc, high, high_inc),
+                        sources + [line_number],
+                    )
+                else:
+                    sources.append(line_number)
+                continue
+        merged.append((spec, [line_number]))
+    return merged
+
+
+def _coverage_contains(covering, candidate):
+    """True when ``candidate`` fits entirely inside ``covering``."""
+    _, start, start_inc, end, end_inc = covering
+    _, cand_start, cand_start_inc, cand_end, cand_end_inc = candidate
+    start_ok = start < cand_start or (
+        start == cand_start and (start_inc or not cand_start_inc)
+    )
+    end_ok = end > cand_end or (end == cand_end and (end_inc or not cand_end_inc))
+    return start_ok and end_ok
+
+
+def _shadowing_line(candidate, entries):
+    """Line number of the earlier PLANK that already covers this one, if any."""
+    if candidate[0] == "text":
+        for line_number, other in entries:
+            if other[0] == "text" and other[1] == candidate[1]:
+                return line_number
+        return None
+
+    numeric = [(line, spec) for line, spec in entries if spec[0] == "numeric"]
+    for merged, sources in _merge_coverage(numeric):
+        if _coverage_contains(merged, candidate):
+            return sources[0]
+    return None
+
+
+def _advise_shadowed_plank(layout, lines, opener_index, index):
+    """Warn when earlier planks already match everything this plank allows."""
+    entries = layout.coverage.setdefault(opener_index, [])
+    candidate = _plank_coverage(lines[index][1])
+    if candidate is None:
+        return
+    shadowing = _shadowing_line(candidate, entries)
+    if shadowing is not None:
+        layout.advise(
+            lines[index][0],
+            f"this PLANK can never match, because the PLANK at line {shadowing} "
+            "already covers every value it allows. The first match wins.",
+        )
+    entries.append((lines[index][0], candidate))
+
+
 class BlockLayout:
     """Precomputed jump table, so the interpreter never rescans for block ends."""
 
@@ -265,9 +366,14 @@ class BlockLayout:
         self.branches = {}
         self.owner = {}
         self.problems = []
+        self.warnings = []
+        self.coverage = {}
 
     def report(self, line_number, message):
         self.problems.append(f"{_line_label(line_number)}: {message}")
+
+    def advise(self, line_number, message):
+        self.warnings.append(f"{_line_label(line_number)}: {message}")
 
     def close_of(self, opener_index, fallback):
         return self.closing.get(opener_index, fallback)
@@ -301,6 +407,7 @@ def build_block_layout(lines):
         if stmt.startswith("COALITION "):
             stack.append(("coalition", index))
             layout.branches[index] = []
+            layout.coverage[index] = []
             continue
 
         if stmt.startswith("PLANK ") or stmt == "MINORITY_REPORT":
@@ -323,6 +430,8 @@ def build_block_layout(lines):
                         "this PLANK comes after MINORITY_REPORT and can never be "
                         "reached",
                     )
+                if marker == "PLANK":
+                    _advise_shadowed_plank(layout, lines, opener_index, index)
                 chain.append((marker, index))
                 layout.owner[index] = opener_index
             else:
@@ -2282,7 +2391,17 @@ def _check_statement_shape(label, stmt):
 
 
 def validate_script(code):
-    """Statically audit a script and report everything the committee can spot."""
+    """Statically audit a script, returning the errors that block execution."""
+    errors, _warnings = analyze_script(code)
+    return errors
+
+
+def analyze_script(code):
+    """Audit a script and return (errors, warnings).
+
+    Errors stop execution. Warnings are advisory notes, such as a PLANK that an
+    earlier PLANK already outranks and can therefore never match.
+    """
     errors = []
     parsed = []
     seen_line_numbers = set()
@@ -2322,9 +2441,11 @@ def validate_script(code):
             continue
         errors.extend(_check_statement_shape(label, stmt))
 
-    errors.extend(build_block_layout(parsed).problems)
+    layout = build_block_layout(parsed)
+    errors.extend(layout.problems)
     errors.sort(key=_validation_sort_key)
-    return errors
+    warnings = sorted(layout.warnings, key=_validation_sort_key)
+    return errors, warnings
 
 
 def _validation_sort_key(message):
@@ -2476,7 +2597,8 @@ def _handle_repl_file_command(statement, interpreter, history):
     if code is None:
         return True
 
-    errors = validate_script(code)
+    errors, warnings = analyze_script(code)
+    _report_validation_warnings(warnings)
     if errors:
         for error in errors:
             print(error)
@@ -2694,12 +2816,18 @@ def _execute(code, trace=False, strict=False):
     return 0
 
 
+def _report_validation_warnings(warnings):
+    for warning in warnings:
+        print(f"⚠️  ADVISORY {warning}")
+
+
 def check_script_file(script_path):
     code = _read_script(script_path)
     if code is None:
         return 1
 
-    errors = validate_script(code)
+    errors, warnings = analyze_script(code)
+    _report_validation_warnings(warnings)
     if errors:
         _report_validation_errors(errors)
         return 1

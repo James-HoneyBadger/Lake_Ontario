@@ -186,7 +186,9 @@ python3 interpreter.py --strict examples/hello.lo
 
 - `--check` audits a script without running it: statement spelling,
   `FACT_CHECK` shape, block balance (`PERHAPS`/`END_PERHAPS` and friends),
-  unknown function names with `did you mean` hints, and `STEP 0` loops.
+  unknown function names with `did you mean` hints, and `STEP 0` loops. It also
+  adds advisory notes — such as a `PLANK` that an earlier band already covers
+  and can therefore never match — without failing the check.
 - `--trace` prints an `AUDIT TRAIL` line before every executed statement.
 - `--strict` starts in `HONEY_BADGER_MODE`, where citing an undeclared name is
   an error rather than `0`.
@@ -307,7 +309,7 @@ The current smoke-test suite is passing with the repository’s bundled checks:
 
 ```bash
 python3 -m pip install flake8 pytest   # dev tooling, once
-python3 tests.py        # 55 checks
+python3 tests.py        # 56 checks
 python3 -m pytest -q    # same checks, pytest entry point
 python3 -m flake8 .     # style audit
 ```

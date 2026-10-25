@@ -1944,6 +1944,83 @@ def run_coalition_validation_test():
     return True
 
 
+def run_coalition_advisory_test():
+    """Shadowed planks are advisory notes, never failures."""
+    shadowed = os.path.join(_temp_dir(), "shadowed_planks.lo")
+    with open(shadowed, "w", encoding="utf-8") as file:
+        file.write(
+            "10 FACT_CHECK x = 50\n"
+            "20 COALITION x\n"
+            "30 PLANK >= 40\n"
+            "40 BROADCAST_CBC \"wide band\"\n"
+            "50 PLANK >= 60\n"
+            "60 BROADCAST_CBC \"never reached\"\n"
+            "70 END_COALITION\n"
+        )
+    proc = subprocess.run(
+        [sys.executable, "interpreter.py", "--check", shadowed],
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    output = proc.stdout + proc.stderr
+    if proc.returncode != 0:
+        sys.stdout.write(
+            f"FAIL coalition-advisory: advisories must not fail --check\n{output}\n"
+        )
+        sys.stdout.flush()
+        return False
+    if "ADVISORY" not in output or "can never match" not in output:
+        sys.stdout.write(f"FAIL coalition-advisory: shadowed PLANK not flagged\n{output}\n")
+        sys.stdout.flush()
+        return False
+
+    ordered = os.path.join(_temp_dir(), "ordered_planks.lo")
+    with open(ordered, "w", encoding="utf-8") as file:
+        file.write(
+            "10 COALITION x\n"
+            "20 PLANK >= 80\n"
+            "30 PLANK >= 60\n"
+            "40 PLANK >= 40\n"
+            "50 PLANK <= 10\n"
+            "60 PLANK \"North\"\n"
+            "70 END_COALITION\n"
+        )
+    proc = subprocess.run(
+        [sys.executable, "interpreter.py", "--check", ordered],
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    output = proc.stdout + proc.stderr
+    if proc.returncode != 0:
+        sys.stdout.write(f"FAIL coalition-advisory: check failed\n{output}\n")
+        sys.stdout.flush()
+        return False
+    if "ADVISORY" in output:
+        sys.stdout.write(
+            f"FAIL coalition-advisory: reachable bands were flagged\n{output}\n"
+        )
+        sys.stdout.flush()
+        return False
+
+    from interpreter import analyze_script
+
+    errors, warnings = analyze_script(
+        open(shadowed, "r", encoding="utf-8").read()
+    )
+    if errors or not warnings:
+        sys.stdout.write(
+            f"FAIL coalition-advisory: analyze_script returned {errors=} {warnings=}\n"
+        )
+        sys.stdout.flush()
+        return False
+
+    sys.stdout.write("PASS coalition-advisory\n")
+    sys.stdout.flush()
+    return True
+
+
 if __name__ == "__main__":
     all_passed = True
     sys.stdout.write("Starting Lake Ontario BASIC interpreter tests...\n")
@@ -2001,6 +2078,7 @@ if __name__ == "__main__":
     all_passed = run_repl_file_commands_test() and all_passed
     all_passed = run_coalition_test() and all_passed
     all_passed = run_coalition_validation_test() and all_passed
+    all_passed = run_coalition_advisory_test() and all_passed
 
     if all_passed:
         sys.stdout.write("\nAll tests passed.\n")

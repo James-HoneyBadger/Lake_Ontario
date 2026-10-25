@@ -77,6 +77,19 @@ Fix:
 - comparison planks are checked in order, so list the strictest band first
 - `COALITION` needs a value to examine, and `PLANK` needs something to compare
 
+## 2b3. Advisory: a `PLANK` that can never match
+
+This does not stop the script:
+
+```text
+⚠️  ADVISORY Line 50: this PLANK can never match, because the PLANK at line 30 already covers every value it allows. The first match wins.
+```
+
+It means an earlier `PLANK` matches every value this one allows, so the branch is
+dead code. Fix by reordering the bands (strictest first) or deleting the
+redundant plank. If the plank depends on a variable, the check cannot tell and
+stays quiet by design.
+
 ## 2c. Undeclared names in `HONEY_BADGER_MODE`
 
 Error:
